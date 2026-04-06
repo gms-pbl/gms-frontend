@@ -5,7 +5,8 @@ import { useDataFreshness } from '../../hooks/useDataFreshness';
 
 const SENSOR_LABELS = {
   soil_moisture:   'Soil Moisture',
-  soil_ec:         'Soil EC',
+  soil_ec:         'Soil Conductivity',
+  soil_salinity:   'Soil Salinity',
   soil_temp:       'Soil Temperature',
   soil_ph:         'Soil pH',
   soil_nitrogen:   'Nitrogen',
