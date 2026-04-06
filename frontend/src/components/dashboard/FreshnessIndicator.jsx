@@ -1,0 +1,28 @@
+import PropTypes from 'prop-types';
+import { useDataFreshness } from '../../hooks/useDataFreshness';
+
+export default function FreshnessIndicator({ timestamp }) {
+  const { label, isStale } = useDataFreshness(timestamp);
+
+  return (
+    <span className={`flex items-center gap-1 text-[10px] tracking-widest uppercase ${isStale ? 'text-warn' : 'text-muted'}`}>
+      {isStale ? (
+        <>
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+          </svg>
+          stale · {label}
+        </>
+      ) : (
+        <>
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
+          {label}
+        </>
+      )}
+    </span>
+  );
+}
+
+FreshnessIndicator.propTypes = {
+  timestamp: PropTypes.string.isRequired,
+};
