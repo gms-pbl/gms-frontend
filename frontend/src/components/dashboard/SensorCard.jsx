@@ -13,7 +13,7 @@ const SENSOR_LABELS = {
   soil_phosphorus: 'Phosphorus',
   soil_potassium:  'Potassium',
   air_temperature: 'Air Temperature',
-  air_humidity:    'Air Humidity',
+  air_humidity:    'Relative Humidity',
 };
 
 const STATUS_STYLES = {
