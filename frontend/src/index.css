@@ -1,1 +1,62 @@
 @import "tailwindcss";
+
+@theme {
+  --color-bg:       #07100a;
+  --color-surface:  #0d1a10;
+  --color-surface2: #112016;
+  --color-border:   #1c3323;
+  --color-accent:   #3ddc64;
+  --color-warn:     #e8a020;
+  --color-crit:     #e83a3a;
+  --color-ink:      #c4dbc9;
+  --color-muted:    #527a5e;
+
+  --font-mono: 'JetBrains Mono', 'IBM Plex Mono', monospace;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'IBM Plex Mono', monospace;
+  background-color: #07100a;
+  color: #c4dbc9;
+  /* Subtle noise texture via repeating gradient */
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(0, 0, 0, 0.04) 3px,
+      rgba(0, 0, 0, 0.04) 4px
+    ),
+    radial-gradient(ellipse at 20% 50%, rgba(61, 220, 100, 0.04) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(61, 220, 100, 0.03) 0%, transparent 50%);
+  background-attachment: fixed;
+}
+
+/* Scrollbar styling for terminal feel */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #07100a;
+}
+::-webkit-scrollbar-thumb {
+  background: #1c3323;
+  border-radius: 0;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3ddc64;
+}
