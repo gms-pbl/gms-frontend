@@ -1,6 +1,6 @@
 export const MOCK_SITE = {
   id: 'site-001',
-  name: 'Greenhouse Alpha',
+  name: 'Greenhouse UTM',
 };
 
 export const MOCK_SENSOR_READINGS = [
