@@ -1,14 +1,19 @@
-import './App.css'
+import { useSensorData } from './hooks/useSensorData';
+import { useAlerts } from './hooks/useAlerts';
+import { MOCK_SITE } from './services/mockData';
+import AppShell from './components/layout/AppShell';
 
-function App() {
+export default function App() {
+  const readings = useSensorData();
+  const { alerts, acknowledge, dismiss } = useAlerts();
 
   return (
-    <>
-      <h1 class="text-3xl font-bold underline">
-          GREENHOUSE MANAGEMENT SYSTEM
-      </h1>
-    </>
-  )
+    <AppShell
+      siteName={MOCK_SITE.name}
+      readings={readings}
+      alerts={alerts}
+      onAcknowledge={acknowledge}
+      onDismiss={dismiss}
+    />
+  );
 }
-
-export default App
