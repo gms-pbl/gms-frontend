@@ -4,7 +4,7 @@ import { MOCK_ALERTS } from '../services/mockData';
 const SENSOR_KEYS = [
   'soil_moisture', 'soil_ec', 'soil_temp', 'soil_ph',
   'soil_nitrogen', 'soil_phosphorus', 'soil_potassium',
-  'air_temperature', 'air_humidity',
+  'soil_salinity', 'air_temperature', 'air_humidity',
 ];
 
 const AUTO_MESSAGES = [
