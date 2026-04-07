@@ -17,9 +17,9 @@ const SENSOR_LABELS = {
 };
 
 const STATUS_CFG = {
-  OK:   { border: '#7ab040', pill: 'bg-accent/15 text-accent border-accent/30',  text: 'text-accent'  },
-  WARN: { border: '#c48a2e', pill: 'bg-soil/15 text-soil border-soil/30',        text: 'text-soil'    },
-  ERR:  { border: '#c4503a', pill: 'bg-crit/15 text-crit border-crit/30',        text: 'text-crit'    },
+  OK:   { border: '#4a7c2f', pill: 'bg-accent/10 text-accent border-accent/30',  dot: 'bg-accent' },
+  WARN: { border: '#a06010', pill: 'bg-warn/10 text-warn border-warn/30',         dot: 'bg-warn'   },
+  ERR:  { border: '#b83020', pill: 'bg-crit/10 text-crit border-crit/30',         dot: 'bg-crit'   },
 };
 
 function formatValue(val) {
@@ -35,8 +35,8 @@ export default function SensorCard({ reading, index }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 18 }}
-      animate={{ opacity: isStale ? 0.45 : 1, y: 0 }}
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: isStale ? 0.5 : 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.06 }}
       className="relative flex flex-col bg-surface border border-border overflow-hidden"
       style={{ borderLeftColor: cfg.border, borderLeftWidth: '3px' }}
@@ -46,7 +46,7 @@ export default function SensorCard({ reading, index }) {
         <div className="flex items-baseline gap-2">
           <span
             className="text-ink font-semibold leading-none"
-            style={{ fontFamily: "'Source Code Pro', monospace", fontSize: 'clamp(1.9rem, 3vw, 2.8rem)' }}
+            style={{ fontFamily: "'Source Code Pro', monospace", fontSize: 'clamp(1.9rem, 3vw, 2.75rem)' }}
           >
             {formatValue(reading.value)}
           </span>
@@ -56,7 +56,7 @@ export default function SensorCard({ reading, index }) {
         </div>
 
         <span
-          className="block text-ink/70 text-sm mt-2.5 leading-snug"
+          className="block text-ink/75 text-sm mt-2.5 leading-snug"
           style={{ fontFamily: "'Zilla Slab', Georgia, serif" }}
         >
           {label}
@@ -64,15 +64,17 @@ export default function SensorCard({ reading, index }) {
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between px-5 py-2.5 border-t border-border/50 bg-surface2">
+      <div className="flex items-center justify-between px-5 py-2.5 border-t border-border/60 bg-surface2">
         <FreshnessIndicator timestamp={reading.lastUpdatedAt} />
-        <span className={`text-[9px] tracking-widest uppercase px-2 py-0.5 border rounded-sm ${cfg.pill}`}
-          style={{ fontFamily: "'Source Code Pro', monospace" }}>
+        <span
+          className={`text-[9px] tracking-widest uppercase px-2 py-0.5 border rounded-sm ${cfg.pill}`}
+          style={{ fontFamily: "'Source Code Pro', monospace" }}
+        >
           {reading.status}
         </span>
       </div>
 
-      {isStale && <div className="absolute inset-0 pointer-events-none border border-soil/20" />}
+      {isStale && <div className="absolute inset-0 pointer-events-none border border-warn/30" />}
     </motion.div>
   );
 }

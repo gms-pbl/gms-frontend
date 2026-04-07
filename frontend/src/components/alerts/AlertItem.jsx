@@ -2,21 +2,9 @@ import PropTypes from 'prop-types';
 import { motion } from 'motion/react';
 
 const SEV = {
-  CRITICAL: {
-    border: '#c4503a',
-    badge:  'bg-crit/15 text-crit border-crit/30',
-    msg:    'text-crit',
-  },
-  WARNING: {
-    border: '#c48a2e',
-    badge:  'bg-soil/15 text-soil border-soil/30',
-    msg:    'text-soil',
-  },
-  INFO: {
-    border: '#304524',
-    badge:  'bg-surface2 text-muted border-border',
-    msg:    'text-ink/80',
-  },
+  CRITICAL: { border: '#b83020', badge: 'bg-crit/10 text-crit border-crit/30',   msg: 'text-crit'    },
+  WARNING:  { border: '#a06010', badge: 'bg-warn/10 text-warn border-warn/30',   msg: 'text-warn'    },
+  INFO:     { border: '#cfc5ac', badge: 'bg-surface2 text-muted border-border',  msg: 'text-ink/75'  },
 };
 
 function formatTime(iso) {
@@ -38,7 +26,6 @@ export default function AlertItem({ alert, onAcknowledge, onDismiss }) {
       className="relative flex flex-col mb-2 bg-surface border border-border overflow-hidden rounded-sm"
       style={{ borderLeftColor: cfg.border, borderLeftWidth: '3px' }}
     >
-      {/* Pulsing critical border */}
       {isCritical && !alert.acknowledged && (
         <motion.span
           className="absolute left-0 top-0 bottom-0 w-[3px] bg-crit"
@@ -47,38 +34,24 @@ export default function AlertItem({ alert, onAcknowledge, onDismiss }) {
         />
       )}
 
-      <div className="px-4 pt-3 pb-2.5">
-        {/* Top row */}
+      <div className="px-4 pt-3 pb-3">
         <div className="flex items-center gap-2 mb-2">
-          <span
-            className={`text-[8px] tracking-widest uppercase px-1.5 py-0.5 border rounded-sm ${cfg.badge}`}
-            style={{ fontFamily: "'Source Code Pro', monospace" }}
-          >
+          <span className={`text-[8px] tracking-widest uppercase px-1.5 py-0.5 border rounded-sm ${cfg.badge}`}
+            style={{ fontFamily: "'Source Code Pro', monospace" }}>
             {alert.severity}
           </span>
-          <span
-            className="text-[9px] text-muted truncate"
-            style={{ fontFamily: "'Source Code Pro', monospace" }}
-          >
+          <span className="text-[9px] text-muted truncate" style={{ fontFamily: "'Source Code Pro', monospace" }}>
             {alert.sensor_key.replace(/_/g, '.')}
           </span>
-          <span
-            className="text-[9px] text-border ml-auto shrink-0"
-            style={{ fontFamily: "'Source Code Pro', monospace" }}
-          >
+          <span className="text-[9px] text-muted/60 ml-auto shrink-0" style={{ fontFamily: "'Source Code Pro', monospace" }}>
             {formatTime(alert.triggered_at)}
           </span>
         </div>
 
-        {/* Message — slab serif */}
-        <p
-          className={`text-[12px] leading-snug ${cfg.msg}`}
-          style={{ fontFamily: "'Zilla Slab', Georgia, serif" }}
-        >
+        <p className={`text-[12px] leading-snug ${cfg.msg}`} style={{ fontFamily: "'Zilla Slab', Georgia, serif" }}>
           {alert.message}
         </p>
 
-        {/* Actions */}
         {(!alert.acknowledged || alert.severity === 'INFO') && (
           <div className="flex gap-1.5 mt-2.5">
             {!alert.acknowledged && (

@@ -9,8 +9,6 @@ export default function AlertPanel({ alerts, onAcknowledge, onDismiss, onClose }
 
   return (
     <div className="flex flex-col h-full">
-
-      {/* Header */}
       <div className="shrink-0 border-b border-border bg-surface">
         <div className="flex items-center justify-between px-5 py-3">
           <h3
@@ -31,14 +29,12 @@ export default function AlertPanel({ alerts, onAcknowledge, onDismiss, onClose }
             </button>
           )}
         </div>
-
-        {/* Severity tally */}
-        <div className="flex border-t border-border/40">
-          <span className={`flex-1 text-center py-1.5 text-[9px] tracking-widest uppercase border-r border-border/40 ${critCount > 0 ? 'text-crit bg-crit/10' : 'text-muted'}`}
+        <div className="flex border-t border-border/50">
+          <span className={`flex-1 text-center py-1.5 text-[9px] tracking-widest uppercase border-r border-border/50 ${critCount > 0 ? 'text-crit bg-crit/8' : 'text-muted'}`}
             style={{ fontFamily: "'Source Code Pro', monospace" }}>
             {critCount} critical
           </span>
-          <span className={`flex-1 text-center py-1.5 text-[9px] tracking-widest uppercase border-r border-border/40 ${warnCount > 0 ? 'text-soil bg-soil/10' : 'text-muted'}`}
+          <span className={`flex-1 text-center py-1.5 text-[9px] tracking-widest uppercase border-r border-border/50 ${warnCount > 0 ? 'text-warn bg-warn/8' : 'text-muted'}`}
             style={{ fontFamily: "'Source Code Pro', monospace" }}>
             {warnCount} warning
           </span>
@@ -49,23 +45,17 @@ export default function AlertPanel({ alerts, onAcknowledge, onDismiss, onClose }
         </div>
       </div>
 
-      {/* List */}
-      <div className="flex-1 overflow-y-auto p-3">
+      <div className="flex-1 overflow-y-auto p-3 bg-bg">
         {alerts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full gap-2">
-            <span className="text-muted text-sm opacity-40" style={{ fontFamily: "'Zilla Slab', Georgia, serif" }}>
+          <div className="flex flex-col items-center justify-center h-full">
+            <span className="text-muted text-sm opacity-50" style={{ fontFamily: "'Zilla Slab', Georgia, serif" }}>
               No active events
             </span>
           </div>
         ) : (
           <AnimatePresence initial={false}>
             {alerts.map(alert => (
-              <AlertItem
-                key={alert.id}
-                alert={alert}
-                onAcknowledge={onAcknowledge}
-                onDismiss={onDismiss}
-              />
+              <AlertItem key={alert.id} alert={alert} onAcknowledge={onAcknowledge} onDismiss={onDismiss} />
             ))}
           </AnimatePresence>
         )}
@@ -90,6 +80,4 @@ AlertPanel.propTypes = {
   onClose:       PropTypes.func,
 };
 
-AlertPanel.defaultProps = {
-  onClose: null,
-};
+AlertPanel.defaultProps = { onClose: null };

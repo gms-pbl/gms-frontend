@@ -21,7 +21,7 @@ function useClock() {
   return time;
 }
 
-export default function AppShell({ siteName, siteId, readings, alerts, onAcknowledge, onDismiss }) {
+export default function AppShell({ siteName, readings, alerts, onAcknowledge, onDismiss }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const time = useClock();
 
@@ -36,26 +36,23 @@ export default function AppShell({ siteName, siteId, readings, alerts, onAcknowl
       <header className="shrink-0 z-20 border-b border-border bg-surface">
         <div className="flex items-center justify-between px-5 sm:px-8 h-16">
 
-          {/* Site identity — serif display */}
           <div className="flex flex-col justify-center">
             <span
-              className="text-ink font-semibold leading-tight tracking-wide"
-              style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 'clamp(1rem, 2.5vw, 1.2rem)' }}
+              className="text-ink font-semibold leading-tight"
+              style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 'clamp(1.05rem, 2.5vw, 1.25rem)' }}
             >
               {siteName}
             </span>
             <span
-              className="text-muted text-[10px] tracking-[0.18em] uppercase mt-0.5 hidden sm:block"
-              style={{ fontFamily: "'Zilla Slab', Georgia, serif" }}
+              className="text-muted text-[10px] tracking-[0.16em] uppercase mt-0.5 hidden sm:block"
+              style={{ fontFamily: "'Source Code Pro', monospace" }}
             >
-              {siteId} · Greenhouse Management
+              Greenhouse Management System
             </span>
           </div>
 
-          {/* Right controls */}
           <div className="flex items-center gap-3">
             <GlobalFeedStatus readings={readings} />
-
             <button
               onClick={() => setDrawerOpen(true)}
               className="relative lg:hidden text-muted hover:text-ink transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
@@ -70,7 +67,7 @@ export default function AppShell({ siteName, siteId, readings, alerts, onAcknowl
         </div>
 
         {/* Sub-bar */}
-        <div className="flex items-center gap-5 px-5 sm:px-8 h-7 border-t border-border/40 bg-bg/40">
+        <div className="flex items-center gap-5 px-5 sm:px-8 h-7 border-t border-border/50 bg-surface2">
           <span className="text-muted text-[9px] tracking-[0.18em] uppercase" style={{ fontFamily: "'Source Code Pro', monospace" }}>
             {readings.length} sensors
           </span>
@@ -104,7 +101,7 @@ export default function AppShell({ siteName, siteId, readings, alerts, onAcknowl
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25 }}
-              className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+              className="fixed inset-0 z-40 bg-ink/30 lg:hidden"
               onClick={() => setDrawerOpen(false)}
             />
             <motion.div
@@ -137,7 +134,6 @@ export default function AppShell({ siteName, siteId, readings, alerts, onAcknowl
 
 AppShell.propTypes = {
   siteName:      PropTypes.string.isRequired,
-  siteId:        PropTypes.string.isRequired,
   readings:      PropTypes.array.isRequired,
   alerts:        PropTypes.array.isRequired,
   onAcknowledge: PropTypes.func.isRequired,
