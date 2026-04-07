@@ -16,9 +16,9 @@ function computeStatus(readings) {
 }
 
 const CFG = {
-  LIVE:     { label: 'Live',     dot: '#7ab040', text: 'text-accent', border: 'border-accent/30', bg: 'bg-accent/10' },
-  DEGRADED: { label: 'Degraded', dot: '#c48a2e', text: 'text-soil',   border: 'border-soil/30',   bg: 'bg-soil/10'   },
-  OFFLINE:  { label: 'Offline',  dot: '#c4503a', text: 'text-crit',   border: 'border-crit/30',   bg: 'bg-crit/10'   },
+  LIVE:     { label: 'Live',     dot: '#4a7c2f', text: 'text-accent', border: 'border-accent/40', bg: 'bg-accent/8'  },
+  DEGRADED: { label: 'Degraded', dot: '#a06010', text: 'text-warn',   border: 'border-warn/40',   bg: 'bg-warn/8'    },
+  OFFLINE:  { label: 'Offline',  dot: '#b83020', text: 'text-crit',   border: 'border-crit/40',   bg: 'bg-crit/8'    },
 };
 
 export default function GlobalFeedStatus({ readings }) {

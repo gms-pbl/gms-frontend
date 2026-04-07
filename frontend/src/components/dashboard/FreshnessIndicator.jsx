@@ -6,7 +6,7 @@ export default function FreshnessIndicator({ timestamp }) {
 
   return (
     <span
-      className={`flex items-center gap-1.5 text-[9px] tracking-[0.15em] uppercase ${isStale ? 'text-soil' : 'text-muted'}`}
+      className={`flex items-center gap-1.5 text-[9px] tracking-[0.15em] uppercase ${isStale ? 'text-warn' : 'text-muted'}`}
       style={{ fontFamily: "'Source Code Pro', monospace" }}
     >
       {isStale ? (
@@ -24,6 +24,4 @@ export default function FreshnessIndicator({ timestamp }) {
   );
 }
 
-FreshnessIndicator.propTypes = {
-  timestamp: PropTypes.string.isRequired,
-};
+FreshnessIndicator.propTypes = { timestamp: PropTypes.string.isRequired };

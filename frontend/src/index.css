@@ -1,17 +1,17 @@
 @import "tailwindcss";
 
 @theme {
-  /* Botanical palette */
-  --color-bg:       #151e0f;
-  --color-surface:  #1c2916;
-  --color-surface2: #22311b;
-  --color-border:   #304524;
-  --color-accent:   #7ab040;
-  --color-soil:     #c48a2e;
-  --color-warn:     #c48a2e;
-  --color-crit:     #c4503a;
-  --color-ink:      #e8dfc8;
-  --color-muted:    #7a9468;
+  /* Botanical — warm off-white base, earthy accents */
+  --color-bg:       #f2ede2;
+  --color-surface:  #faf7f0;
+  --color-surface2: #ede7d8;
+  --color-border:   #cfc5ac;
+  --color-accent:   #4a7c2f;
+  --color-soil:     #8b5e2a;
+  --color-warn:     #a06010;
+  --color-crit:     #b83020;
+  --color-ink:      #2c3820;
+  --color-muted:    #7a8a68;
 
   --font-display: 'Playfair Display', Georgia, serif;
   --font-slab:    'Zilla Slab', Georgia, serif;
@@ -30,20 +30,20 @@ html, body, #root {
 
 body {
   font-family: 'Zilla Slab', Georgia, serif;
-  background-color: #151e0f;
-  color: #e8dfc8;
+  background-color: #f2ede2;
+  color: #2c3820;
 
-  /* Organic layered background — warm vignette + subtle grain */
+  /* Warm paper — vignette edges + very faint grain */
   background-image:
-    radial-gradient(ellipse at 50% 0%,   rgba(122, 176, 64,  0.07) 0%, transparent 60%),
-    radial-gradient(ellipse at 0%   80%,  rgba(196, 138, 46,  0.05) 0%, transparent 50%),
-    radial-gradient(ellipse at 100% 100%, rgba(122, 176, 64,  0.04) 0%, transparent 50%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+    radial-gradient(ellipse at 50% 0%,   rgba(74, 124, 47,  0.06) 0%, transparent 55%),
+    radial-gradient(ellipse at 0%  100%,  rgba(139, 94, 42,  0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 100% 50%,  rgba(74, 124, 47,  0.04) 0%, transparent 45%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
   background-size: 100% 100%, 100% 100%, 100% 100%, 300px 300px;
   background-attachment: fixed;
 }
 
 ::-webkit-scrollbar        { width: 5px; }
-::-webkit-scrollbar-track  { background: #151e0f; }
-::-webkit-scrollbar-thumb  { background: #304524; border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: #7ab040; }
+::-webkit-scrollbar-track  { background: #ede7d8; }
+::-webkit-scrollbar-thumb  { background: #cfc5ac; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #4a7c2f; }
