@@ -3,19 +3,19 @@ import { motion } from 'motion/react';
 
 const SEV = {
   CRITICAL: {
-    bar:    'var(--color-crit)',
-    label:  'text-crit',
-    badge:  'bg-crit/15 text-crit border-crit/35',
+    border: '#c4503a',
+    badge:  'bg-crit/15 text-crit border-crit/30',
+    msg:    'text-crit',
   },
   WARNING: {
-    bar:    'var(--color-warn)',
-    label:  'text-warn',
-    badge:  'bg-warn/15 text-warn border-warn/35',
+    border: '#c48a2e',
+    badge:  'bg-soil/15 text-soil border-soil/30',
+    msg:    'text-soil',
   },
   INFO: {
-    bar:    'var(--color-border)',
-    label:  'text-ink',
+    border: '#304524',
     badge:  'bg-surface2 text-muted border-border',
+    msg:    'text-ink/80',
   },
 };
 
@@ -31,56 +31,70 @@ export default function AlertItem({ alert, onAcknowledge, onDismiss }) {
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, x: -10 }}
+      initial={{ opacity: 0, x: -8 }}
       animate={{ opacity: alert.acknowledged ? 0.4 : 1, x: 0 }}
       exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-      transition={{ duration: 0.2 }}
-      className="relative flex gap-0 mb-1.5 bg-surface border border-border overflow-hidden"
-      style={{ borderLeftColor: cfg.bar, borderLeftWidth: '2px' }}
+      transition={{ duration: 0.22 }}
+      className="relative flex flex-col mb-2 bg-surface border border-border overflow-hidden rounded-sm"
+      style={{ borderLeftColor: cfg.border, borderLeftWidth: '3px' }}
     >
-      {/* Pulsing crit bar */}
+      {/* Pulsing critical border */}
       {isCritical && !alert.acknowledged && (
         <motion.span
-          className="absolute left-0 top-0 bottom-0 w-0.5 bg-crit"
+          className="absolute left-0 top-0 bottom-0 w-[3px] bg-crit"
           animate={{ opacity: [1, 0.15, 1] }}
           transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
         />
       )}
 
-      <div className="flex-1 px-3 py-2.5 min-w-0">
-        {/* Top row: severity + sensor path + time */}
-        <div className="flex items-center gap-1.5 mb-1.5">
-          <span className={`font-mono text-[8px] tracking-widest uppercase px-1.5 py-0.5 border ${cfg.badge}`}>
+      <div className="px-4 pt-3 pb-2.5">
+        {/* Top row */}
+        <div className="flex items-center gap-2 mb-2">
+          <span
+            className={`text-[8px] tracking-widest uppercase px-1.5 py-0.5 border rounded-sm ${cfg.badge}`}
+            style={{ fontFamily: "'Source Code Pro', monospace" }}
+          >
             {alert.severity}
           </span>
-          <span className="font-mono text-[8px] text-muted tracking-wide truncate">
+          <span
+            className="text-[9px] text-muted truncate"
+            style={{ fontFamily: "'Source Code Pro', monospace" }}
+          >
             {alert.sensor_key.replace(/_/g, '.')}
           </span>
-          <span className="font-mono text-[8px] text-border ml-auto shrink-0">
+          <span
+            className="text-[9px] text-border ml-auto shrink-0"
+            style={{ fontFamily: "'Source Code Pro', monospace" }}
+          >
             {formatTime(alert.triggered_at)}
           </span>
         </div>
 
-        {/* Message */}
-        <p className={`font-mono text-[10px] leading-snug ${cfg.label}`}>
+        {/* Message — slab serif */}
+        <p
+          className={`text-[12px] leading-snug ${cfg.msg}`}
+          style={{ fontFamily: "'Zilla Slab', Georgia, serif" }}
+        >
           {alert.message}
         </p>
 
         {/* Actions */}
         {(!alert.acknowledged || alert.severity === 'INFO') && (
-          <div className="flex gap-1 mt-2">
+          <div className="flex gap-1.5 mt-2.5">
             {!alert.acknowledged && (
               <button
                 onClick={() => onAcknowledge(alert.id)}
-                className="font-mono text-[8px] tracking-widest uppercase px-2 py-1 border border-border text-muted hover:border-accent hover:text-accent transition-colors min-h-[28px]"
+                className="text-[9px] tracking-widest uppercase px-2.5 py-1 border border-border text-muted hover:border-accent hover:text-accent transition-colors rounded-sm min-h-[28px]"
+                style={{ fontFamily: "'Source Code Pro', monospace" }}
               >
-                ack
+                acknowledge
               </button>
             )}
             {(alert.severity === 'INFO' || alert.acknowledged) && (
               <button
                 onClick={() => onDismiss(alert.id)}
-                className="font-mono text-[8px] tracking-widest uppercase px-2 py-1 border border-border text-muted hover:border-crit hover:text-crit transition-colors min-h-[28px]"
+                className="text-[9px] tracking-widest uppercase px-2.5 py-1 border border-border text-muted hover:border-crit hover:text-crit transition-colors rounded-sm min-h-[28px]"
+                style={{ fontFamily: "'Source Code Pro', monospace" }}
               >
                 dismiss
               </button>
