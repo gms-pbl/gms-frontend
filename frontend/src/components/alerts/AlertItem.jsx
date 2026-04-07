@@ -2,9 +2,42 @@ import PropTypes from 'prop-types';
 import { motion } from 'motion/react';
 
 const SEV = {
-  CRITICAL: { border: '#b83020', badge: 'bg-crit/10 text-crit border-crit/30',   msg: 'text-crit'    },
-  WARNING:  { border: '#a06010', badge: 'bg-warn/10 text-warn border-warn/30',   msg: 'text-warn'    },
-  INFO:     { border: '#cfc5ac', badge: 'bg-surface2 text-muted border-border',  msg: 'text-ink/75'  },
+  CRITICAL: {
+    bandColor: '#b83020',
+    badge: 'bg-crit/10 text-crit border-crit/30',
+    msg: 'text-crit',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="8" x2="12" y2="12" />
+        <circle cx="12" cy="16" r="0.5" fill="currentColor" />
+      </svg>
+    ),
+  },
+  WARNING: {
+    bandColor: '#a06010',
+    badge: 'bg-warn/10 text-warn border-warn/30',
+    msg: 'text-warn',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+        <line x1="12" y1="9" x2="12" y2="13" />
+        <circle cx="12" cy="17" r="0.5" fill="currentColor" />
+      </svg>
+    ),
+  },
+  INFO: {
+    bandColor: '#cfc5ac',
+    badge: 'bg-surface2 text-muted border-border',
+    msg: 'text-ink/75',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="16" x2="12" y2="12" />
+        <circle cx="12" cy="8" r="0.5" fill="currentColor" />
+      </svg>
+    ),
+  },
 };
 
 function formatTime(iso) {
@@ -23,18 +56,23 @@ export default function AlertItem({ alert, onAcknowledge, onDismiss }) {
       animate={{ opacity: alert.acknowledged ? 0.4 : 1, x: 0 }}
       exit={{ opacity: 0, height: 0, marginBottom: 0 }}
       transition={{ duration: 0.22 }}
-      className="relative flex flex-col mb-2 bg-surface border border-border overflow-hidden rounded-sm"
-      style={{ borderLeftColor: cfg.border, borderLeftWidth: '3px' }}
+      className="relative flex mb-2 bg-surface border border-border overflow-hidden rounded-sm"
     >
-      {isCritical && !alert.acknowledged && (
-        <motion.span
-          className="absolute left-0 top-0 bottom-0 w-[3px] bg-crit"
-          animate={{ opacity: [1, 0.15, 1] }}
-          transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-        />
-      )}
+      {/* Left colour band — consistent 4px for all severities */}
+      <motion.div
+        className="w-1 shrink-0 self-stretch"
+        style={{ backgroundColor: cfg.bandColor }}
+        animate={isCritical && !alert.acknowledged ? { opacity: [1, 0.2, 1] } : { opacity: 1 }}
+        transition={isCritical ? { duration: 1.4, repeat: Infinity, ease: 'easeInOut' } : {}}
+      />
 
-      <div className="px-4 pt-3 pb-3">
+      {/* Icon */}
+      <div className={`flex items-start pt-3.5 pl-3 ${cfg.msg} ${alert.acknowledged ? 'opacity-50' : ''}`}>
+        {cfg.icon}
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 px-3 pt-3 pb-3 min-w-0">
         <div className="flex items-center gap-2 mb-2">
           <span className={`text-[8px] tracking-widest uppercase px-1.5 py-0.5 border rounded-sm ${cfg.badge}`}
             style={{ fontFamily: "'Source Code Pro', monospace" }}>
