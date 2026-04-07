@@ -16,15 +16,10 @@ const SENSOR_LABELS = {
   air_humidity:    'Relative Humidity',
 };
 
-const STATUS_BORDER_COLOR = {
-  OK:   'var(--color-accent)',
-  WARN: 'var(--color-warn)',
-  ERR:  'var(--color-crit)',
-};
-const STATUS_TEXT = {
-  OK:   'text-accent',
-  WARN: 'text-warn',
-  ERR:  'text-crit',
+const STATUS_CFG = {
+  OK:   { border: '#7ab040', pill: 'bg-accent/15 text-accent border-accent/30',  text: 'text-accent'  },
+  WARN: { border: '#c48a2e', pill: 'bg-soil/15 text-soil border-soil/30',        text: 'text-soil'    },
+  ERR:  { border: '#c4503a', pill: 'bg-crit/15 text-crit border-crit/30',        text: 'text-crit'    },
 };
 
 function formatValue(val) {
@@ -36,46 +31,48 @@ function formatValue(val) {
 export default function SensorCard({ reading, index }) {
   const { isStale } = useDataFreshness(reading.lastUpdatedAt);
   const label = SENSOR_LABELS[reading.sensor_key] ?? reading.sensor_key;
-  const borderColor = STATUS_BORDER_COLOR[reading.status] ?? STATUS_BORDER_COLOR.OK;
-  const statusText  = STATUS_TEXT[reading.status]  ?? STATUS_TEXT.OK;
+  const cfg = STATUS_CFG[reading.status] ?? STATUS_CFG.OK;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: isStale ? 0.45 : 1, y: 0 }}
-      transition={{ duration: 0.35, delay: index * 0.06 }}
+      transition={{ duration: 0.4, delay: index * 0.06 }}
       className="relative flex flex-col bg-surface border border-border overflow-hidden"
-      style={{ borderLeftColor: borderColor, borderLeftWidth: '3px' }}
+      style={{ borderLeftColor: cfg.border, borderLeftWidth: '3px' }}
     >
-      {/* Main body */}
-      <div className="flex-1 px-4 pt-4 pb-3">
-        <div className="flex items-baseline gap-1.5">
+      {/* Value + label */}
+      <div className="flex-1 px-5 pt-5 pb-4">
+        <div className="flex items-baseline gap-2">
           <span
-            className="font-mono font-bold text-ink leading-none"
-            style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 'clamp(2rem, 3.5vw, 3rem)' }}
+            className="text-ink font-semibold leading-none"
+            style={{ fontFamily: "'Source Code Pro', monospace", fontSize: 'clamp(1.9rem, 3vw, 2.8rem)' }}
           >
             {formatValue(reading.value)}
           </span>
-          <span className="font-mono text-[11px] text-muted leading-none mb-0.5">
+          <span className="text-muted text-xs leading-none mb-0.5" style={{ fontFamily: "'Source Code Pro', monospace" }}>
             {reading.unit}
           </span>
         </div>
-        <span className="block font-mono text-[9px] tracking-[0.2em] uppercase text-muted mt-2">
+
+        <span
+          className="block text-ink/70 text-sm mt-2.5 leading-snug"
+          style={{ fontFamily: "'Zilla Slab', Georgia, serif" }}
+        >
           {label}
         </span>
       </div>
 
-      {/* Footer strip */}
-      <div className="flex items-center justify-between px-4 py-2 border-t border-border/60 bg-surface2">
+      {/* Footer */}
+      <div className="flex items-center justify-between px-5 py-2.5 border-t border-border/50 bg-surface2">
         <FreshnessIndicator timestamp={reading.lastUpdatedAt} />
-        <span className={`font-mono text-[9px] tracking-widest uppercase ${statusText}`}>
+        <span className={`text-[9px] tracking-widest uppercase px-2 py-0.5 border rounded-sm ${cfg.pill}`}
+          style={{ fontFamily: "'Source Code Pro', monospace" }}>
           {reading.status}
         </span>
       </div>
 
-      {isStale && (
-        <div className="absolute inset-0 pointer-events-none border border-warn/25" />
-      )}
+      {isStale && <div className="absolute inset-0 pointer-events-none border border-soil/20" />}
     </motion.div>
   );
 }
