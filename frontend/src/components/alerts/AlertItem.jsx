@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 
 const SEV = {
   CRITICAL: {
-    bandColor: '#b83020',
+    bandColor: 'var(--color-crit)',
     badge: 'bg-crit/10 text-crit border-crit/30',
     msg: 'text-crit',
     icon: (
@@ -15,7 +15,7 @@ const SEV = {
     ),
   },
   WARNING: {
-    bandColor: '#a06010',
+    bandColor: 'var(--color-warn)',
     badge: 'bg-warn/10 text-warn border-warn/30',
     msg: 'text-warn',
     icon: (
@@ -27,7 +27,7 @@ const SEV = {
     ),
   },
   INFO: {
-    bandColor: '#cfc5ac',
+    bandColor: 'var(--color-border)',
     badge: 'bg-surface2 text-muted border-border',
     msg: 'text-ink/75',
     icon: (

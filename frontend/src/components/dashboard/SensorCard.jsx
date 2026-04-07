@@ -17,9 +17,9 @@ const SENSOR_LABELS = {
 };
 
 const STATUS_CFG = {
-  OK:   { border: '#4a7c2f', pill: 'bg-accent/10 text-accent border-accent/30',  dot: 'bg-accent' },
-  WARN: { border: '#a06010', pill: 'bg-warn/10 text-warn border-warn/30',         dot: 'bg-warn'   },
-  ERR:  { border: '#b83020', pill: 'bg-crit/10 text-crit border-crit/30',         dot: 'bg-crit'   },
+  OK:   { border: 'var(--color-accent)', pill: 'bg-accent/10 text-accent border-accent/30',  dot: 'bg-accent' },
+  WARN: { border: 'var(--color-warn)',   pill: 'bg-warn/10 text-warn border-warn/30',         dot: 'bg-warn'   },
+  ERR:  { border: 'var(--color-crit)',   pill: 'bg-crit/10 text-crit border-crit/30',         dot: 'bg-crit'   },
 };
 
 function formatValue(val) {
