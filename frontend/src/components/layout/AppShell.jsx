@@ -7,6 +7,7 @@ import DesktopSidebar from './DesktopSidebar';
 import MobileNav from './MobileNav';
 import AlertPanel from '../alerts/AlertPanel';
 import AlertBadge from '../alerts/AlertBadge';
+import { useTheme } from '../../hooks/useTheme';
 
 function useClock() {
   const [time, setTime] = useState(() =>
@@ -24,6 +25,7 @@ function useClock() {
 export default function AppShell({ siteName, readings, alerts, onAcknowledge, onDismiss }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const time = useClock();
+  const { isDark, toggleTheme } = useTheme();
 
   const unackedCritical = alerts.filter(
     a => a.severity === 'CRITICAL' && !a.acknowledged
@@ -68,16 +70,28 @@ export default function AppShell({ siteName, readings, alerts, onAcknowledge, on
 
         {/* Sub-bar */}
         <div className="flex items-center gap-5 px-5 sm:px-8 h-7 border-t border-border/50 bg-surface2">
-          <span className="text-muted text-[9px] tracking-[0.18em] uppercase" style={{ fontFamily: "'Source Code Pro', monospace" }}>
-            {readings.length} sensors
-          </span>
-          <span className="text-border select-none">·</span>
-          <span className="text-muted text-[9px] tracking-[0.18em] uppercase hidden sm:block" style={{ fontFamily: "'Source Code Pro', monospace" }}>
-            SN-3002 // SHT10
-          </span>
           <span className="text-muted text-[9px] ml-auto" style={{ fontFamily: "'Source Code Pro', monospace" }}>
             {time}
           </span>
+          <button
+            onClick={toggleTheme}
+            className="text-muted hover:text-ink transition-colors flex items-center justify-center w-5 h-5 shrink-0"
+            aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {isDark ? (
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+                <circle cx="12" cy="12" r="5" />
+                <line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                <line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" />
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+              </svg>
+            )}
+          </button>
         </div>
       </header>
 

@@ -1,21 +1,44 @@
 @import "tailwindcss";
 
-@theme {
-  /* Botanical — warm off-white base, earthy accents */
-  --color-bg:       #f2ede2;
-  --color-surface:  #faf7f0;
-  --color-surface2: #ede7d8;
-  --color-border:   #cfc5ac;
-  --color-accent:   #4a7c2f;
-  --color-soil:     #8b5e2a;
-  --color-warn:     #a06010;
-  --color-crit:     #b83020;
-  --color-ink:      #2c3820;
-  --color-muted:    #7a8a68;
+@theme inline {
+  --color-bg:       var(--theme-bg);
+  --color-surface:  var(--theme-surface);
+  --color-surface2: var(--theme-surface2);
+  --color-border:   var(--theme-border);
+  --color-accent:   var(--theme-accent);
+  --color-soil:     var(--theme-soil);
+  --color-warn:     var(--theme-warn);
+  --color-crit:     var(--theme-crit);
+  --color-ink:      var(--theme-ink);
+  --color-muted:    var(--theme-muted);
+}
 
-  --font-display: 'Playfair Display', Georgia, serif;
-  --font-slab:    'Zilla Slab', Georgia, serif;
-  --font-data:    'Source Code Pro', monospace;
+/* ── Light theme (botanical) ─────────────────── */
+:root {
+  --theme-bg:       #f2ede2;
+  --theme-surface:  #faf7f0;
+  --theme-surface2: #ede7d8;
+  --theme-border:   #cfc5ac;
+  --theme-accent:   #4a7c2f;
+  --theme-soil:     #8b5e2a;
+  --theme-warn:     #a06010;
+  --theme-crit:     #b83020;
+  --theme-ink:      #2c3820;
+  --theme-muted:    #7a8a68;
+}
+
+/* ── Dark theme (terminal) ───────────────────── */
+[data-theme="dark"] {
+  --theme-bg:       #07100a;
+  --theme-surface:  #0d1a10;
+  --theme-surface2: #0f1f12;
+  --theme-border:   #1e3824;
+  --theme-accent:   #3ddc64;
+  --theme-soil:     #527a5e;
+  --theme-warn:     #e8a020;
+  --theme-crit:     #e83a3a;
+  --theme-ink:      #c4dbc9;
+  --theme-muted:    #527a5e;
 }
 
 *,
@@ -28,12 +51,12 @@ html, body, #root {
   padding: 0;
 }
 
+/* ── Light body ──────────────────────────────── */
 body {
   font-family: 'Zilla Slab', Georgia, serif;
-  background-color: #f2ede2;
-  color: #2c3820;
+  background-color: var(--theme-bg);
+  color: var(--theme-ink);
 
-  /* Warm paper — vignette edges + very faint grain */
   background-image:
     radial-gradient(ellipse at 50% 0%,   rgba(74, 124, 47,  0.06) 0%, transparent 55%),
     radial-gradient(ellipse at 0%  100%,  rgba(139, 94, 42,  0.05) 0%, transparent 50%),
@@ -43,7 +66,22 @@ body {
   background-attachment: fixed;
 }
 
+/* ── Dark body (scan-line texture) ──────────── */
+[data-theme="dark"] body {
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.18) 2px,
+      rgba(0, 0, 0, 0.18) 4px
+    );
+  background-size: 100% 4px;
+  background-attachment: fixed;
+}
+
+/* ── Scrollbar ───────────────────────────────── */
 ::-webkit-scrollbar        { width: 5px; }
-::-webkit-scrollbar-track  { background: #ede7d8; }
-::-webkit-scrollbar-thumb  { background: #cfc5ac; border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: #4a7c2f; }
+::-webkit-scrollbar-track  { background: var(--theme-surface2); }
+::-webkit-scrollbar-thumb  { background: var(--theme-border); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--theme-accent); }
