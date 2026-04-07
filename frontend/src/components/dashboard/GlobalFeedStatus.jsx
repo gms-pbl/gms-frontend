@@ -10,15 +10,15 @@ function computeStatus(readings) {
   const stale = readings.filter(
     r => Date.now() - new Date(r.lastUpdatedAt).getTime() > STALE_THRESHOLD_MS
   ).length;
-  if (stale === 0)      return 'LIVE';
-  if (stale >= total)   return 'OFFLINE';
+  if (stale === 0)    return 'LIVE';
+  if (stale >= total) return 'OFFLINE';
   return 'DEGRADED';
 }
 
 const CFG = {
-  LIVE:     { label: 'Live',     dot: '#3ddc64', text: 'text-accent', border: 'border-accent/25', bg: 'bg-accent/8' },
-  DEGRADED: { label: 'Degraded', dot: '#e8a020', text: 'text-warn',   border: 'border-warn/25',   bg: 'bg-warn/8'   },
-  OFFLINE:  { label: 'Offline',  dot: '#e83a3a', text: 'text-crit',   border: 'border-crit/25',   bg: 'bg-crit/8'   },
+  LIVE:     { label: 'Live',     dot: '#7ab040', text: 'text-accent', border: 'border-accent/30', bg: 'bg-accent/10' },
+  DEGRADED: { label: 'Degraded', dot: '#c48a2e', text: 'text-soil',   border: 'border-soil/30',   bg: 'bg-soil/10'   },
+  OFFLINE:  { label: 'Offline',  dot: '#c4503a', text: 'text-crit',   border: 'border-crit/30',   bg: 'bg-crit/10'   },
 };
 
 export default function GlobalFeedStatus({ readings }) {
@@ -32,11 +32,14 @@ export default function GlobalFeedStatus({ readings }) {
   const cfg = CFG[status];
 
   return (
-    <div className={`flex items-center gap-2 px-2.5 py-1 border font-mono text-[9px] tracking-widest uppercase ${cfg.bg} ${cfg.border} ${cfg.text}`}>
+    <div
+      className={`flex items-center gap-2 px-3 py-1 border rounded-sm text-[9px] tracking-widest uppercase ${cfg.bg} ${cfg.border} ${cfg.text}`}
+      style={{ fontFamily: "'Source Code Pro', monospace" }}
+    >
       <motion.span
         className="w-1.5 h-1.5 rounded-full shrink-0"
         style={{ backgroundColor: cfg.dot }}
-        animate={status === 'LIVE' ? { opacity: [1, 0.35, 1] } : { opacity: 1 }}
+        animate={status === 'LIVE' ? { opacity: [1, 0.3, 1] } : { opacity: 1 }}
         transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
       />
       {cfg.label}

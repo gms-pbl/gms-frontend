@@ -10,45 +10,51 @@ export default function AlertPanel({ alerts, onAcknowledge, onDismiss, onClose }
   return (
     <div className="flex flex-col h-full">
 
-      {/* ── Panel header ─────────────────────────── */}
-      <div className="shrink-0 border-b border-border">
-        <div className="flex items-center justify-between px-4 py-2.5">
-          <span className="font-mono text-[10px] tracking-[0.25em] uppercase text-muted">
+      {/* Header */}
+      <div className="shrink-0 border-b border-border bg-surface">
+        <div className="flex items-center justify-between px-5 py-3">
+          <h3
+            className="text-ink text-base leading-none"
+            style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+          >
             Event Log
-          </span>
+          </h3>
           {onClose && (
             <button
               onClick={onClose}
               className="text-muted hover:text-ink transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-label="Close"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
                 <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             </button>
           )}
         </div>
 
-        {/* Severity summary bar */}
-        <div className="flex items-center gap-0 border-t border-border/50">
-          <span className={`flex-1 text-center font-mono text-[9px] tracking-widest uppercase py-1.5 border-r border-border/50 ${critCount > 0 ? 'text-crit bg-crit/10' : 'text-muted'}`}>
-            {critCount} crit
+        {/* Severity tally */}
+        <div className="flex border-t border-border/40">
+          <span className={`flex-1 text-center py-1.5 text-[9px] tracking-widest uppercase border-r border-border/40 ${critCount > 0 ? 'text-crit bg-crit/10' : 'text-muted'}`}
+            style={{ fontFamily: "'Source Code Pro', monospace" }}>
+            {critCount} critical
           </span>
-          <span className={`flex-1 text-center font-mono text-[9px] tracking-widest uppercase py-1.5 border-r border-border/50 ${warnCount > 0 ? 'text-warn bg-warn/10' : 'text-muted'}`}>
-            {warnCount} warn
+          <span className={`flex-1 text-center py-1.5 text-[9px] tracking-widest uppercase border-r border-border/40 ${warnCount > 0 ? 'text-soil bg-soil/10' : 'text-muted'}`}
+            style={{ fontFamily: "'Source Code Pro', monospace" }}>
+            {warnCount} warning
           </span>
-          <span className={`flex-1 text-center font-mono text-[9px] tracking-widest uppercase py-1.5 ${infoCount > 0 ? 'text-ink' : 'text-muted'}`}>
+          <span className={`flex-1 text-center py-1.5 text-[9px] tracking-widest uppercase ${infoCount > 0 ? 'text-ink/70' : 'text-muted'}`}
+            style={{ fontFamily: "'Source Code Pro', monospace" }}>
             {infoCount} info
           </span>
         </div>
       </div>
 
-      {/* ── Alert list ───────────────────────────── */}
-      <div className="flex-1 overflow-y-auto p-2.5">
+      {/* List */}
+      <div className="flex-1 overflow-y-auto p-3">
         {alerts.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-2">
-            <span className="font-mono text-[9px] tracking-widest uppercase text-muted opacity-40">
-              — no events —
+            <span className="text-muted text-sm opacity-40" style={{ fontFamily: "'Zilla Slab', Georgia, serif" }}>
+              No active events
             </span>
           </div>
         ) : (
