@@ -32,26 +32,28 @@ export default function AppShell({ siteName, siteId, readings, alerts, onAcknowl
   return (
     <div className="flex flex-col h-full min-h-screen">
 
-      {/* ── Primary header band ───────────────────────────── */}
-      <header className="shrink-0 z-20">
-        <div className="flex items-center justify-between px-4 sm:px-6 h-14 bg-surface border-b border-border">
+      {/* ── Header ─────────────────────────────────── */}
+      <header className="shrink-0 z-20 border-b border-border bg-surface">
+        <div className="flex items-center justify-between px-5 sm:px-8 h-16">
 
-          {/* Left: system identity */}
-          <div className="flex items-center gap-3 sm:gap-4">
-            <span className="font-mono font-bold text-accent tracking-[0.25em] text-xs uppercase select-none">
-              GMS
+          {/* Site identity — serif display */}
+          <div className="flex flex-col justify-center">
+            <span
+              className="text-ink font-semibold leading-tight tracking-wide"
+              style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 'clamp(1rem, 2.5vw, 1.2rem)' }}
+            >
+              {siteName}
             </span>
-            <span className="text-border select-none">/</span>
-            <div className="flex flex-col leading-none">
-              <span className="font-mono font-semibold text-ink text-sm tracking-wide">{siteName}</span>
-              <span className="font-mono text-[9px] text-muted tracking-[0.2em] uppercase mt-0.5 hidden sm:block">
-                {siteId}
-              </span>
-            </div>
+            <span
+              className="text-muted text-[10px] tracking-[0.18em] uppercase mt-0.5 hidden sm:block"
+              style={{ fontFamily: "'Zilla Slab', Georgia, serif" }}
+            >
+              {siteId} · Greenhouse Management
+            </span>
           </div>
 
-          {/* Right: status + mobile alert trigger */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* Right controls */}
+          <div className="flex items-center gap-3">
             <GlobalFeedStatus readings={readings} />
 
             <button
@@ -67,38 +69,32 @@ export default function AppShell({ siteName, siteId, readings, alerts, onAcknowl
           </div>
         </div>
 
-        {/* ── System info sub-bar ───────────────────────── */}
-        <div className="flex items-center gap-6 px-4 sm:px-6 h-6 bg-bg border-b border-border/40">
-          <span className="font-mono text-[9px] text-muted tracking-[0.2em] uppercase">
-            {readings.length} nodes
+        {/* Sub-bar */}
+        <div className="flex items-center gap-5 px-5 sm:px-8 h-7 border-t border-border/40 bg-bg/40">
+          <span className="text-muted text-[9px] tracking-[0.18em] uppercase" style={{ fontFamily: "'Source Code Pro', monospace" }}>
+            {readings.length} sensors
           </span>
-          <span className="font-mono text-[9px] text-border select-none">·</span>
-          <span className="font-mono text-[9px] text-muted tracking-[0.2em] uppercase hidden sm:block">
+          <span className="text-border select-none">·</span>
+          <span className="text-muted text-[9px] tracking-[0.18em] uppercase hidden sm:block" style={{ fontFamily: "'Source Code Pro', monospace" }}>
             SN-3002 // SHT10
           </span>
-          <span className="font-mono text-[9px] text-border select-none hidden sm:block">·</span>
-          <span className="font-mono text-[9px] text-muted tracking-[0.15em] ml-auto">
+          <span className="text-muted text-[9px] ml-auto" style={{ fontFamily: "'Source Code Pro', monospace" }}>
             {time}
           </span>
         </div>
       </header>
 
-      {/* ── Body ─────────────────────────────────────────── */}
+      {/* ── Body ───────────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden">
         <DesktopSidebar alerts={alerts} onAcknowledge={onAcknowledge} onDismiss={onDismiss} />
-
         <main className="flex-1 overflow-y-auto pb-16 lg:pb-0">
           <SensorDashboard readings={readings} />
         </main>
       </div>
 
-      {/* ── Mobile bottom nav ───────────────────────────── */}
-      <MobileNav
-        unackedCriticalCount={unackedCritical}
-        onOpenAlerts={() => setDrawerOpen(true)}
-      />
+      <MobileNav unackedCriticalCount={unackedCritical} onOpenAlerts={() => setDrawerOpen(true)} />
 
-      {/* ── Mobile slide-up drawer ──────────────────────── */}
+      {/* ── Mobile drawer ──────────────────────────── */}
       <AnimatePresence>
         {drawerOpen && (
           <>
@@ -107,8 +103,8 @@ export default function AppShell({ siteName, siteId, readings, alerts, onAcknowl
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-40 bg-black/70 lg:hidden"
+              transition={{ duration: 0.25 }}
+              className="fixed inset-0 z-40 bg-black/50 lg:hidden"
               onClick={() => setDrawerOpen(false)}
             />
             <motion.div
@@ -120,8 +116,8 @@ export default function AppShell({ siteName, siteId, readings, alerts, onAcknowl
               className="fixed bottom-0 left-0 right-0 z-50 bg-surface border-t-2 border-border lg:hidden"
               style={{ maxHeight: '80vh' }}
             >
-              <div className="flex justify-center pt-2.5 pb-1">
-                <span className="w-10 h-0.5 bg-border" />
+              <div className="flex justify-center pt-3 pb-1">
+                <span className="w-10 h-0.5 bg-border rounded-full" />
               </div>
               <div style={{ height: 'calc(80vh - 24px)' }}>
                 <AlertPanel
