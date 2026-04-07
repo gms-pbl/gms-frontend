@@ -10,6 +10,7 @@ export default function App() {
   return (
     <AppShell
       siteName={MOCK_SITE.name}
+      siteId={MOCK_SITE.id}
       readings={readings}
       alerts={alerts}
       onAcknowledge={acknowledge}
