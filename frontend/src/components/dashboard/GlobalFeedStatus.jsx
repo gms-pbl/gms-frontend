@@ -6,7 +6,7 @@ const STALE_THRESHOLD_MS = 15000;
 
 function computeStatus(readings) {
   const total = readings.length;
-  if (total === 0) return 'OFFLINE';
+  if (total === 0) return 'LIVE';
   const stale = readings.filter(
     r => Date.now() - new Date(r.lastUpdatedAt).getTime() > STALE_THRESHOLD_MS
   ).length;
