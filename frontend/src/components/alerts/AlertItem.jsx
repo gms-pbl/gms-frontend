@@ -90,28 +90,33 @@ export default function AlertItem({ alert, onAcknowledge, onDismiss }) {
           {alert.message}
         </p>
 
-        {(!alert.acknowledged || alert.severity === 'INFO') && (
-          <div className="flex gap-1.5 mt-2.5">
-            {!alert.acknowledged && (
-              <button
-                onClick={() => onAcknowledge(alert.id)}
-                className="text-[9px] tracking-widest uppercase px-2.5 py-1 border border-border text-muted hover:border-accent hover:text-accent transition-colors rounded-sm min-h-[28px]"
-                style={{ fontFamily: "'Source Code Pro', monospace" }}
-              >
-                acknowledge
-              </button>
-            )}
-            {(alert.severity === 'INFO' || alert.acknowledged) && (
-              <button
-                onClick={() => onDismiss(alert.id)}
-                className="text-[9px] tracking-widest uppercase px-2.5 py-1 border border-border text-muted hover:border-crit hover:text-crit transition-colors rounded-sm min-h-[28px]"
-                style={{ fontFamily: "'Source Code Pro', monospace" }}
-              >
-                dismiss
-              </button>
-            )}
-          </div>
-        )}
+        <div className="flex gap-1.5 mt-2.5">
+          {alert.severity === 'INFO' ? (
+            <button
+              onClick={() => onDismiss(alert.id)}
+              className="text-[9px] tracking-widest uppercase px-2.5 py-1 border border-border text-muted hover:border-crit hover:text-crit transition-colors rounded-sm min-h-[28px]"
+              style={{ fontFamily: "'Source Code Pro', monospace" }}
+            >
+              dismiss
+            </button>
+          ) : !alert.acknowledged ? (
+            <button
+              onClick={() => onAcknowledge(alert.id)}
+              className="text-[9px] tracking-widest uppercase px-2.5 py-1 border border-border text-muted hover:border-accent hover:text-accent transition-colors rounded-sm min-h-[28px]"
+              style={{ fontFamily: "'Source Code Pro', monospace" }}
+            >
+              acknowledge
+            </button>
+          ) : (
+            <button
+              onClick={() => onDismiss(alert.id)}
+              className="text-[9px] tracking-widest uppercase px-2.5 py-1 border border-border text-muted hover:border-crit hover:text-crit transition-colors rounded-sm min-h-[28px]"
+              style={{ fontFamily: "'Source Code Pro', monospace" }}
+            >
+              dismiss
+            </button>
+          )}
+        </div>
       </div>
     </motion.div>
   );
