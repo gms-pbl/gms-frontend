@@ -1,35 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { MOCK_ALERTS } from '../services/mockData';
 
-const SENSOR_KEYS = [
-  'soil_moisture', 'soil_ec', 'soil_temp', 'soil_ph',
-  'soil_nitrogen', 'soil_phosphorus', 'soil_potassium',
-  'soil_salinity', 'air_temperature', 'air_humidity',
-];
-
-const AUTO_MESSAGES = [
-  'Value trending outside normal range',
-  'Sensor reading fluctuation detected',
-  'Parameter approaching threshold',
-  'Brief anomaly recorded',
-];
+const API_BASE = 'http://localhost:8081';
 
 const SEVERITY_ORDER = { CRITICAL: 0, WARNING: 1, INFO: 2 };
-
-let _counter = 100;
-
-function generateAlert() {
-  _counter += 1;
-  const severity = Math.random() < 0.5 ? 'WARNING' : 'INFO';
-  return {
-    id: `auto-${_counter}`,
-    severity,
-    sensor_key: SENSOR_KEYS[Math.floor(Math.random() * SENSOR_KEYS.length)],
-    message: AUTO_MESSAGES[Math.floor(Math.random() * AUTO_MESSAGES.length)],
-    triggered_at: new Date().toISOString(),
-    acknowledged: false,
-  };
-}
 
 function sortAlerts(list) {
   return [...list].sort((a, b) => {
@@ -39,21 +12,28 @@ function sortAlerts(list) {
 }
 
 export function useAlerts() {
-  const [alerts, setAlerts] = useState(() => sortAlerts(MOCK_ALERTS));
+  const [alerts, setAlerts] = useState([]);
 
   useEffect(() => {
-    const id = setInterval(() => {
-      setAlerts(prev => sortAlerts([...prev, generateAlert()]));
-    }, 5000);
-    return () => clearInterval(id);
+    fetch(`${API_BASE}/v1/alerts`)
+      .then(r => r.json())
+      .then(data => setAlerts(sortAlerts(data)))
+      .catch(() => {});
   }, []);
 
   const acknowledge = useCallback((id) => {
-    setAlerts(prev => sortAlerts(prev.map(a => a.id === id ? { ...a, acknowledged: true } : a)));
+    fetch(`${API_BASE}/v1/alerts/${id}/acknowledge`, { method: 'POST' })
+      .then(r => r.json())
+      .then(updated =>
+        setAlerts(prev => sortAlerts(prev.map(a => a.id === id ? updated : a)))
+      )
+      .catch(() => {});
   }, []);
 
   const dismiss = useCallback((id) => {
-    setAlerts(prev => prev.filter(a => a.id !== id));
+    fetch(`${API_BASE}/v1/alerts/${id}`, { method: 'DELETE' })
+      .then(() => setAlerts(prev => prev.filter(a => a.id !== id)))
+      .catch(() => {});
   }, []);
 
   return { alerts, acknowledge, dismiss };
