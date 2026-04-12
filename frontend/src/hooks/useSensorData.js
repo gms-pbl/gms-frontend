@@ -1,28 +1,19 @@
 import { useState, useEffect } from 'react';
-import { MOCK_SENSOR_READINGS } from '../services/mockData';
 
-const JITTER_FACTOR = 0.02;
-
-function applyJitter(reading) {
-  const range = Math.max(reading.value * JITTER_FACTOR, 0.1);
-  const delta = (Math.random() - 0.5) * 2 * range;
-  const next = Math.round((reading.value + delta) * 100) / 100;
-  return {
-    ...reading,
-    value: next,
-    lastUpdatedAt: new Date().toISOString(),
-  };
-}
+const API_BASE = 'http://localhost:8081';
 
 export function useSensorData() {
-  const [readings, setReadings] = useState(() =>
-    MOCK_SENSOR_READINGS.map(r => ({ ...r, lastUpdatedAt: new Date().toISOString() }))
-  );
+  const [readings, setReadings] = useState([]);
 
   useEffect(() => {
-    const id = setInterval(() => {
-      setReadings(prev => prev.map(applyJitter));
-    }, 10000);
+    const fetchReadings = () =>
+      fetch(`${API_BASE}/v1/dashboard/live`)
+        .then(r => r.json())
+        .then(setReadings)
+        .catch(() => {});
+
+    fetchReadings();
+    const id = setInterval(fetchReadings, 10000);
     return () => clearInterval(id);
   }, []);
 
