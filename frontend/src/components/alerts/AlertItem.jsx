@@ -53,10 +53,10 @@ export default function AlertItem({ alert, onAcknowledge, onDismiss }) {
     <motion.div
       layout
       initial={{ opacity: 0, x: -8 }}
-      animate={{ opacity: alert.acknowledged ? 0.4 : 1, x: 0 }}
+      animate={{ x: 0 }}
       exit={{ opacity: 0, height: 0, marginBottom: 0 }}
       transition={{ duration: 0.22 }}
-      className="relative flex mb-2 bg-surface border border-border overflow-hidden rounded-sm"
+      className={`relative flex mb-2 bg-surface border border-border overflow-hidden rounded-sm transition-opacity duration-300 ${alert.acknowledged ? 'opacity-40' : 'opacity-100'}`}
     >
       {/* Left colour band — consistent 4px for all severities */}
       <motion.div
