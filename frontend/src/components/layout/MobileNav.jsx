@@ -11,6 +11,18 @@ export default function MobileNav({ unackedCriticalCount, onOpenAlerts }) {
         <span className="text-[8px] tracking-widest uppercase" style={{ fontFamily: "'Source Code Pro', monospace" }}>Sensors</span>
       </button>
 
+      <a
+        href="/zones"
+        className="relative flex flex-col items-center gap-0.5 text-muted hover:text-ink transition-colors min-w-[44px] min-h-[44px] justify-center"
+        aria-label="Open zones page"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 2a7 7 0 00-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 00-7-7z" />
+          <circle cx="12" cy="9" r="2.5" />
+        </svg>
+        <span className="text-[8px] tracking-widest uppercase" style={{ fontFamily: "'Source Code Pro', monospace" }}>Zones</span>
+      </a>
+
       <button
         onClick={onOpenAlerts}
         className="relative flex flex-col items-center gap-0.5 text-muted hover:text-ink transition-colors min-w-[44px] min-h-[44px] justify-center"
