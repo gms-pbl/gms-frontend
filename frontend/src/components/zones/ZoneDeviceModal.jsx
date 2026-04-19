@@ -95,7 +95,16 @@ export default function ZoneDeviceModal({
     return null;
   }
 
+  const deviceIsLive = device.is_live !== false;
+
   const handleSetState = async (channel, state) => {
+    if (!deviceIsLive) {
+      if (onNotify) {
+        onNotify('Device is offline. Output commands are disabled until heartbeat resumes.');
+      }
+      return;
+    }
+
     try {
       await setChannelState(channel, state);
       if (onNotify) {
@@ -113,12 +122,12 @@ export default function ZoneDeviceModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-3 py-6"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/40 px-3 py-4 sm:py-6"
       onClick={onClose}
       role="presentation"
     >
       <article
-        className="max-h-[92vh] w-full max-w-6xl overflow-hidden rounded-lg border border-border bg-surface shadow-2xl"
+        className="my-auto flex max-h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
         <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-4 py-3">
@@ -129,6 +138,9 @@ export default function ZoneDeviceModal({
               zone: {device.zone_name || 'unassigned'} ({device.zone_id || 'n/a'})
             </p>
             <p className="text-xs text-muted">last seen: {formatTimestamp(device.last_seen_at)}</p>
+            <p className="text-xs text-muted">
+              status: {deviceIsLive ? 'LIVE' : 'OFFLINE'}
+            </p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -151,10 +163,16 @@ export default function ZoneDeviceModal({
           </div>
         </header>
 
-        <div className="max-h-[calc(92vh-78px)] overflow-y-auto px-4 py-4">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 pb-8">
           {(telemetryError || commandError) && (
             <p className="mb-4 rounded border border-crit/30 bg-crit/10 px-3 py-2 text-sm text-crit">
               {telemetryError || commandError}
+            </p>
+          )}
+
+          {!deviceIsLive && (
+            <p className="mb-4 rounded border border-warn/40 bg-warn/10 px-3 py-2 text-sm text-warn">
+              Device appears offline. Commands are temporarily disabled until it announces again.
             </p>
           )}
 
@@ -174,6 +192,7 @@ export default function ZoneDeviceModal({
                 metrics={metrics}
                 optimisticOutputs={optimisticOutputs}
                 pendingChannels={pendingChannels}
+                disabled={!deviceIsLive}
                 onSetState={handleSetState}
               />
             </div>
@@ -192,6 +211,7 @@ ZoneDeviceModal.propTypes = {
     zone_id: PropTypes.string,
     zone_name: PropTypes.string,
     last_seen_at: PropTypes.string,
+    is_live: PropTypes.bool,
     metadata: PropTypes.object,
   }),
   tenantId: PropTypes.string.isRequired,

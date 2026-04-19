@@ -20,6 +20,7 @@ export default function ZoneActuatorControlGrid({
   metrics,
   optimisticOutputs,
   pendingChannels,
+  disabled,
   onSetState,
 }) {
   return (
@@ -43,7 +44,7 @@ export default function ZoneActuatorControlGrid({
               key={metricKey}
               type="button"
               onClick={() => void onSetState(channel, nextState)}
-              disabled={pending}
+              disabled={pending || disabled}
               className={`min-h-[36px] rounded border px-2 font-mono text-xs font-semibold transition ${
                 high
                   ? 'border-accent bg-accent text-white hover:brightness-110'
@@ -63,5 +64,10 @@ ZoneActuatorControlGrid.propTypes = {
   metrics: PropTypes.objectOf(PropTypes.number).isRequired,
   optimisticOutputs: PropTypes.objectOf(PropTypes.number).isRequired,
   pendingChannels: PropTypes.objectOf(PropTypes.bool).isRequired,
+  disabled: PropTypes.bool,
   onSetState: PropTypes.func.isRequired,
+};
+
+ZoneActuatorControlGrid.defaultProps = {
+  disabled: false,
 };
