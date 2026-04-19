@@ -30,14 +30,20 @@ async function parseResponseBody(response) {
 export async function apiRequest(path, options = {}) {
   const { body, headers, ...rest } = options;
 
-  const response = await fetch(buildUrl(path), {
-    headers: {
-      ...(body !== undefined ? { 'content-type': 'application/json' } : {}),
-      ...(headers ?? {}),
-    },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-    ...rest,
-  });
+  let response;
+  try {
+    response = await fetch(buildUrl(path), {
+      headers: {
+        ...(body !== undefined ? { 'content-type': 'application/json' } : {}),
+        ...(headers ?? {}),
+      },
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+      ...rest,
+    });
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new ApiError(`Unable to reach backend API (${API_BASE_URL}). ${reason}`, 0);
+  }
 
   const parsed = await parseResponseBody(response);
 
