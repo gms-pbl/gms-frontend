@@ -20,8 +20,11 @@ export function useZoneDeviceControls({ tenantId, greenhouseId, zoneId, deviceId
   const latestCommandIdRef = useRef(null);
   const commandChannelByIdRef = useRef({});
 
-  useEffect(() => () => {
-    mountedRef.current = false;
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
 
   useEffect(() => {
