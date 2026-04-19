@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-
-const API_BASE = 'http://localhost:8081';
+import { API_BASE_URL } from '../config/runtimeConfig';
 
 const SEVERITY_ORDER = { CRITICAL: 0, WARNING: 1, INFO: 2 };
 
@@ -11,18 +10,22 @@ function sortAlerts(list) {
   });
 }
 
-export function useAlerts() {
+export function useAlerts({ enabled = true } = {}) {
   const [alerts, setAlerts] = useState([]);
 
   useEffect(() => {
-    fetch(`${API_BASE}/v1/alerts`)
+    if (!enabled) {
+      return;
+    }
+
+    fetch(`${API_BASE_URL}/v1/alerts`)
       .then(r => r.json())
       .then(data => setAlerts(sortAlerts(data)))
       .catch(() => {});
-  }, []);
+  }, [enabled]);
 
   const acknowledge = useCallback((id) => {
-    fetch(`${API_BASE}/v1/alerts/${id}/acknowledge`, { method: 'POST' })
+    fetch(`${API_BASE_URL}/v1/alerts/${id}/acknowledge`, { method: 'POST' })
       .then(r => r.json())
       .then(updated =>
         setAlerts(prev => sortAlerts(prev.map(a => a.id === id ? updated : a)))
@@ -31,10 +34,10 @@ export function useAlerts() {
   }, []);
 
   const dismiss = useCallback((id) => {
-    fetch(`${API_BASE}/v1/alerts/${id}`, { method: 'DELETE' })
+    fetch(`${API_BASE_URL}/v1/alerts/${id}`, { method: 'DELETE' })
       .then(() => setAlerts(prev => prev.filter(a => a.id !== id)))
       .catch(() => {});
   }, []);
 
-  return { alerts, acknowledge, dismiss };
+  return { alerts: enabled ? alerts : [], acknowledge, dismiss };
 }

@@ -19,10 +19,11 @@ function usePathname() {
 
 export default function App() {
   const pathname = usePathname();
-  const readings = useSensorData();
-  const { alerts, acknowledge, dismiss } = useAlerts();
+  const zonesRoute = pathname.startsWith('/zones');
+  const readings = useSensorData({ enabled: !zonesRoute });
+  const { alerts, acknowledge, dismiss } = useAlerts({ enabled: !zonesRoute });
 
-  if (pathname.startsWith('/zones')) {
+  if (zonesRoute) {
     return <ZoneManagementPage />;
   }
 

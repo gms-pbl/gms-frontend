@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../config/runtimeConfig';
 
-const API_BASE = 'http://localhost:8081';
-
-export function useSensorData() {
+export function useSensorData({ enabled = true } = {}) {
   const [readings, setReadings] = useState([]);
 
   useEffect(() => {
+    if (!enabled) {
+      return undefined;
+    }
+
     const fetchReadings = () =>
-      fetch(`${API_BASE}/v1/dashboard/live`)
+      fetch(`${API_BASE_URL}/v1/dashboard/live`)
         .then(r => r.json())
         .then(setReadings)
         .catch(() => {});
@@ -15,7 +18,7 @@ export function useSensorData() {
     fetchReadings();
     const id = setInterval(fetchReadings, 10000);
     return () => clearInterval(id);
-  }, []);
+  }, [enabled]);
 
-  return readings;
+  return enabled ? readings : [];
 }

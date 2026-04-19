@@ -26,20 +26,46 @@ export function useZoneRegistry({
       const data = await getZoneRegistry({ tenantId, greenhouseId });
       setRegistry(data);
       setError('');
+      return true;
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : String(nextError));
+      return false;
     } finally {
       setLoading(false);
     }
   }, [tenantId, greenhouseId]);
 
   useEffect(() => {
-    void refresh();
-    const id = setInterval(() => {
-      void refresh();
-    }, 5000);
+    let cancelled = false;
+    let timeoutId;
+    let failureStreak = 0;
 
-    return () => clearInterval(id);
+    const nextDelay = () => {
+      if (failureStreak <= 0) return 5000;
+      if (failureStreak === 1) return 8000;
+      if (failureStreak === 2) return 13000;
+      return 20000;
+    };
+
+    const tick = async () => {
+      const ok = await refresh();
+      failureStreak = ok ? 0 : failureStreak + 1;
+
+      if (cancelled) {
+        return;
+      }
+
+      timeoutId = setTimeout(() => {
+        void tick();
+      }, nextDelay());
+    };
+
+    void tick();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
   }, [refresh]);
 
   const runMutation = useCallback(async (action) => {
