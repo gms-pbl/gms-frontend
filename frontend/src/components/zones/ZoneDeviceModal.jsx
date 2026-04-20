@@ -20,7 +20,6 @@ export default function ZoneDeviceModal({
   isOpen,
   onClose,
   device,
-  tenantId,
   greenhouseId,
   onNotify,
 }) {
@@ -62,7 +61,6 @@ export default function ZoneDeviceModal({
     reconcileTelemetry,
     setChannelState,
   } = useZoneDeviceControls({
-    tenantId,
     greenhouseId,
     zoneId: device?.zone_id,
     deviceId: device?.device_id,
@@ -214,7 +212,6 @@ ZoneDeviceModal.propTypes = {
     is_live: PropTypes.bool,
     metadata: PropTypes.object,
   }),
-  tenantId: PropTypes.string.isRequired,
   greenhouseId: PropTypes.string.isRequired,
   onNotify: PropTypes.func,
 };

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { DEFAULT_GREENHOUSE_ID, DEFAULT_TENANT_ID } from '../../config/runtimeConfig';
+import PropTypes from 'prop-types';
 import { useZoneRegistry } from '../../hooks/useZoneRegistry';
 import ZoneDeviceModal from './ZoneDeviceModal';
 
@@ -67,7 +67,7 @@ function formatTimestamp(value) {
   return date.toLocaleString();
 }
 
-export default function ZoneManagementPage() {
+export default function ZoneManagementPage({ greenhouseId }) {
   const {
     registry,
     loading,
@@ -79,8 +79,7 @@ export default function ZoneManagementPage() {
     rename,
     sync,
   } = useZoneRegistry({
-    tenantId: DEFAULT_TENANT_ID,
-    greenhouseId: DEFAULT_GREENHOUSE_ID,
+    greenhouseId,
   });
 
   const [assignDrafts, setAssignDrafts] = useState({});
@@ -163,11 +162,18 @@ export default function ZoneManagementPage() {
           <div>
             <h1 className="text-xl font-semibold text-ink">Zone Management</h1>
             <p className="text-xs uppercase tracking-[0.14em] text-muted" style={{ fontFamily: "'Source Code Pro', monospace" }}>
-              tenant `{registry?.tenant_id ?? DEFAULT_TENANT_ID}` / greenhouse `{registry?.greenhouse_id ?? DEFAULT_GREENHOUSE_ID}`
+              tenant `{registry?.tenant_id ?? 'n/a'}` / greenhouse `{registry?.greenhouse_id ?? greenhouseId ?? 'n/a'}`
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <a
+              href="/g"
+              className="inline-flex min-h-[40px] items-center rounded border border-border px-3 text-xs font-semibold uppercase tracking-[0.12em] text-ink transition hover:bg-surface2"
+              style={{ fontFamily: "'Source Code Pro', monospace" }}
+            >
+              Greenhouses
+            </a>
             <a
               href="/"
               className="inline-flex min-h-[40px] items-center rounded border border-border px-3 text-xs font-semibold uppercase tracking-[0.12em] text-ink transition hover:bg-surface2"
@@ -398,11 +404,18 @@ export default function ZoneManagementPage() {
           isOpen={Boolean(selectedDevice)}
           onClose={closeDeviceModal}
           device={selectedDevice}
-          tenantId={registry?.tenant_id ?? DEFAULT_TENANT_ID}
-          greenhouseId={registry?.greenhouse_id ?? DEFAULT_GREENHOUSE_ID}
+          greenhouseId={registry?.greenhouse_id ?? greenhouseId ?? ''}
           onNotify={setMessage}
         />
       </div>
     </div>
   );
 }
+
+ZoneManagementPage.propTypes = {
+  greenhouseId: PropTypes.string,
+};
+
+ZoneManagementPage.defaultProps = {
+  greenhouseId: '',
+};

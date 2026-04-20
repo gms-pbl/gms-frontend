@@ -12,7 +12,7 @@ export default function MobileNav({ unackedCriticalCount, onOpenAlerts }) {
       </button>
 
       <a
-        href="/zones"
+        href="/g"
         className="relative flex flex-col items-center gap-0.5 text-muted hover:text-ink transition-colors min-w-[44px] min-h-[44px] justify-center"
         aria-label="Open zones page"
       >

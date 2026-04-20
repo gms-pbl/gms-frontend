@@ -55,7 +55,7 @@ export default function AppShell({ siteName, readings, alerts, onAcknowledge, on
 
           <div className="flex items-center gap-3">
             <a
-              href="/zones"
+              href="/g"
               className="hidden sm:inline-flex min-h-[38px] items-center rounded border border-border px-3 text-[10px] uppercase tracking-[0.14em] text-ink transition hover:bg-surface2"
               style={{ fontFamily: "'Source Code Pro', monospace" }}
             >

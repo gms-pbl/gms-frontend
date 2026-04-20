@@ -38,6 +38,7 @@ export async function apiRequest(path, options = {}) {
         ...(headers ?? {}),
       },
       body: body !== undefined ? JSON.stringify(body) : undefined,
+      credentials: 'include',
       ...rest,
     });
   } catch (error) {

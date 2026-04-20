@@ -1,20 +1,21 @@
 import { apiRequest } from './apiClient';
 
-export async function getZoneRegistry({ tenantId, greenhouseId }) {
-  const params = new URLSearchParams({
-    tenant_id: tenantId,
-    greenhouse_id: greenhouseId,
-  });
-
-  return apiRequest(`/v1/zones/registry?${params.toString()}`, { method: 'GET' });
+function greenhouseBasePath(greenhouseId) {
+  const normalized = String(greenhouseId ?? '').trim();
+  if (!normalized) {
+    throw new Error('greenhouseId is required');
+  }
+  return `/v1/g/${encodeURIComponent(normalized)}/zones`;
 }
 
-export async function assignZone({ tenantId, greenhouseId, deviceId, zoneId, zoneName, metadata }) {
-  return apiRequest('/v1/zones/assign', {
+export async function getZoneRegistry({ greenhouseId }) {
+  return apiRequest(`${greenhouseBasePath(greenhouseId)}/registry`, { method: 'GET' });
+}
+
+export async function assignZone({ greenhouseId, deviceId, zoneId, zoneName, metadata }) {
+  return apiRequest(`${greenhouseBasePath(greenhouseId)}/assign`, {
     method: 'POST',
     body: {
-      tenant_id: tenantId,
-      greenhouse_id: greenhouseId,
       device_id: deviceId,
       zone_id: zoneId,
       zone_name: zoneName,
@@ -23,40 +24,32 @@ export async function assignZone({ tenantId, greenhouseId, deviceId, zoneId, zon
   });
 }
 
-export async function unassignZone({ tenantId, greenhouseId, deviceId }) {
-  return apiRequest('/v1/zones/unassign', {
+export async function unassignZone({ greenhouseId, deviceId }) {
+  return apiRequest(`${greenhouseBasePath(greenhouseId)}/unassign`, {
     method: 'POST',
     body: {
-      tenant_id: tenantId,
-      greenhouse_id: greenhouseId,
       device_id: deviceId,
     },
   });
 }
 
-export async function syncZoneRegistry({ tenantId, greenhouseId }) {
-  return apiRequest('/v1/zones/sync', {
+export async function syncZoneRegistry({ greenhouseId, gatewayId }) {
+  return apiRequest(`${greenhouseBasePath(greenhouseId)}/sync`, {
     method: 'POST',
-    body: {
-      tenant_id: tenantId,
-      greenhouse_id: greenhouseId,
-    },
+    body: gatewayId ? { gateway_id: gatewayId } : {},
   });
 }
 
 export async function sendZoneCommand({
-  tenantId,
   greenhouseId,
   action,
   zoneId,
   deviceId,
   payload,
 }) {
-  return apiRequest('/v1/zones/command', {
+  return apiRequest(`${greenhouseBasePath(greenhouseId)}/command`, {
     method: 'POST',
     body: {
-      tenant_id: tenantId,
-      greenhouse_id: greenhouseId,
       action,
       zone_id: zoneId,
       device_id: deviceId,
@@ -65,12 +58,12 @@ export async function sendZoneCommand({
   });
 }
 
-export async function getZoneCommandAck({ commandId }) {
+export async function getZoneCommandAck({ greenhouseId, commandId }) {
   if (!commandId) {
     throw new Error('commandId is required to query command ACK');
   }
   const params = new URLSearchParams({ command_id: commandId });
-  return apiRequest(`/v1/zones/command-ack?${params.toString()}`, { method: 'GET' });
+  return apiRequest(`${greenhouseBasePath(greenhouseId)}/command-ack?${params.toString()}`, { method: 'GET' });
 }
 
 export async function getZoneLiveReadings({ greenhouseId, zoneId }) {
