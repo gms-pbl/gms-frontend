@@ -11,7 +11,7 @@ function wait(ms) {
   });
 }
 
-export function useZoneDeviceControls({ tenantId, greenhouseId, zoneId, deviceId }) {
+export function useZoneDeviceControls({ greenhouseId, zoneId, deviceId }) {
   const [pendingChannels, setPendingChannels] = useState({});
   const [error, setError] = useState('');
   const [latestAck, setLatestAck] = useState(null);
@@ -33,7 +33,7 @@ export function useZoneDeviceControls({ tenantId, greenhouseId, zoneId, deviceId
     setError('');
     setOptimisticOutputs({});
     commandChannelByIdRef.current = {};
-  }, [tenantId, greenhouseId, zoneId, deviceId]);
+  }, [greenhouseId, zoneId, deviceId]);
 
   const clearOptimisticForCommand = useCallback((commandId) => {
     const metricKey = commandChannelByIdRef.current[commandId];
@@ -91,7 +91,7 @@ export function useZoneDeviceControls({ tenantId, greenhouseId, zoneId, deviceId
       await wait(ACK_POLL_INTERVAL_MS);
 
       try {
-        const ack = await getZoneCommandAck({ commandId });
+        const ack = await getZoneCommandAck({ greenhouseId, commandId });
         if (!mountedRef.current || latestCommandIdRef.current !== commandId) {
           return;
         }
@@ -148,7 +148,7 @@ export function useZoneDeviceControls({ tenantId, greenhouseId, zoneId, deviceId
       pending: false,
     });
     clearOptimisticForCommand(commandId);
-  }, [clearOptimisticForCommand]);
+  }, [clearOptimisticForCommand, greenhouseId]);
 
   const setChannelState = useCallback(async (channel, state) => {
     if (!deviceId) {
@@ -168,7 +168,6 @@ export function useZoneDeviceControls({ tenantId, greenhouseId, zoneId, deviceId
 
     try {
       const response = await sendZoneCommand({
-        tenantId,
         greenhouseId,
         zoneId,
         deviceId,
@@ -212,7 +211,7 @@ export function useZoneDeviceControls({ tenantId, greenhouseId, zoneId, deviceId
         return next;
       });
     }
-  }, [deviceId, greenhouseId, pollCommandAck, tenantId, zoneId]);
+  }, [deviceId, greenhouseId, pollCommandAck, zoneId]);
 
   return {
     pendingChannels,

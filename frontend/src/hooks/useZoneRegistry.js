@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react';
-import { DEFAULT_GREENHOUSE_ID, DEFAULT_TENANT_ID } from '../config/runtimeConfig';
 import {
   assignZone,
   getZoneRegistry,
@@ -8,11 +7,10 @@ import {
 } from '../services/zonesApi';
 
 export function useZoneRegistry({
-  tenantId = DEFAULT_TENANT_ID,
-  greenhouseId = DEFAULT_GREENHOUSE_ID,
+  greenhouseId,
 } = {}) {
   const [registry, setRegistry] = useState({
-    tenant_id: tenantId,
+    tenant_id: null,
     greenhouse_id: greenhouseId,
     assigned_zones: [],
     discovered_devices: [],
@@ -22,8 +20,19 @@ export function useZoneRegistry({
   const [error, setError] = useState('');
 
   const refresh = useCallback(async () => {
+    if (!greenhouseId) {
+      setRegistry((prev) => ({
+        ...prev,
+        greenhouse_id: greenhouseId ?? null,
+        assigned_zones: [],
+        discovered_devices: [],
+      }));
+      setLoading(false);
+      return false;
+    }
+
     try {
-      const data = await getZoneRegistry({ tenantId, greenhouseId });
+      const data = await getZoneRegistry({ greenhouseId });
       setRegistry(data);
       setError('');
       return true;
@@ -33,7 +42,7 @@ export function useZoneRegistry({
     } finally {
       setLoading(false);
     }
-  }, [tenantId, greenhouseId]);
+  }, [greenhouseId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -85,22 +94,20 @@ export function useZoneRegistry({
 
   const assign = useCallback(async ({ deviceId, zoneName, zoneId, metadata }) => {
     return runMutation(() => assignZone({
-      tenantId,
       greenhouseId,
       deviceId,
       zoneName,
       zoneId,
       metadata,
     }));
-  }, [greenhouseId, runMutation, tenantId]);
+  }, [greenhouseId, runMutation]);
 
   const unassign = useCallback(async (deviceId) => {
     return runMutation(() => unassignZone({
-      tenantId,
       greenhouseId,
       deviceId,
     }));
-  }, [greenhouseId, runMutation, tenantId]);
+  }, [greenhouseId, runMutation]);
 
   const rename = useCallback(async ({ deviceId, zoneId, zoneName, metadata }) => {
     return assign({
@@ -113,10 +120,9 @@ export function useZoneRegistry({
 
   const sync = useCallback(async () => {
     return runMutation(() => syncZoneRegistry({
-      tenantId,
       greenhouseId,
     }));
-  }, [greenhouseId, runMutation, tenantId]);
+  }, [greenhouseId, runMutation]);
 
   return {
     registry,
