@@ -7,9 +7,12 @@ import DesktopSidebar from './DesktopSidebar';
 import MobileNav from './MobileNav';
 import AlertPanel from '../alerts/AlertPanel';
 import AlertBadge from '../alerts/AlertBadge';
+import IrrigationControlPanel from '../irrigation/IrrigationControlPanel';
 import { useTheme } from '../../hooks/useTheme';
 import { useSensorData } from '../../hooks/useSensorData';
 import { useAlerts } from '../../hooks/useAlerts';
+import { useIrrigation } from '../../hooks/useIrrigation';
+import { MOCK_SITE } from '../../services/mockData';
 
 function useClock() {
   const [time, setTime] = useState(() =>
@@ -26,15 +29,25 @@ function useClock() {
 
 export default function AppShell({ greenhouseId }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [activeView, setActiveView] = useState('sensors');
   const time = useClock();
   const { isDark, toggleTheme } = useTheme();
 
   const readings = useSensorData({ greenhouseId });
   const { alerts, acknowledge, dismiss } = useAlerts();
+  const siteId = greenhouseId || MOCK_SITE.id;
+  const { zones, loading: irrigationLoading, toggleZone, manualOverride, emergencyStop } = useIrrigation(siteId);
 
   const unackedCritical = alerts.filter(
     a => a.severity === 'CRITICAL' && !a.acknowledged
   ).length;
+
+  const tabCls = (view) =>
+    `px-4 h-full text-[9px] tracking-widest uppercase border-b-2 transition-colors ${
+      activeView === view
+        ? 'text-accent border-accent'
+        : 'text-muted border-transparent hover:text-ink'
+    }`;
 
   return (
     <div className="flex flex-col h-full min-h-screen">
@@ -114,17 +127,69 @@ export default function AppShell({ greenhouseId }) {
             )}
           </button>
         </div>
+
+        {/* View tab bar */}
+        <div className="flex items-stretch px-5 sm:px-8 h-9 border-t border-border/40 bg-surface gap-1">
+          <button
+            className={tabCls('sensors')}
+            onClick={() => setActiveView('sensors')}
+            style={{ fontFamily: "'Source Code Pro', monospace" }}
+          >
+            Sensors
+          </button>
+          <button
+            className={tabCls('irrigation')}
+            onClick={() => setActiveView('irrigation')}
+            style={{ fontFamily: "'Source Code Pro', monospace" }}
+          >
+            Irrigation
+          </button>
+        </div>
       </header>
 
       {/* ── Body ───────────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden">
         <DesktopSidebar alerts={alerts} onAcknowledge={acknowledge} onDismiss={dismiss} />
         <main className="flex-1 overflow-y-auto pb-16 lg:pb-0">
-          <SensorDashboard readings={readings} />
+          <AnimatePresence mode="wait">
+            {activeView === 'sensors' && (
+              <motion.div
+                key="sensors"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.18 }}
+              >
+                <SensorDashboard readings={readings} />
+              </motion.div>
+            )}
+            {activeView === 'irrigation' && (
+              <motion.div
+                key="irrigation"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.18 }}
+              >
+                <IrrigationControlPanel
+                  zones={zones}
+                  loading={irrigationLoading}
+                  onToggle={toggleZone}
+                  onManualOverride={manualOverride}
+                  onEmergencyStop={emergencyStop}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </main>
       </div>
 
-      <MobileNav unackedCriticalCount={unackedCritical} onOpenAlerts={() => setDrawerOpen(true)} />
+      <MobileNav
+        unackedCriticalCount={unackedCritical}
+        onOpenAlerts={() => setDrawerOpen(true)}
+        activeView={activeView}
+        onSetView={setActiveView}
+      />
 
       {/* ── Mobile drawer ──────────────────────────── */}
       <AnimatePresence>
