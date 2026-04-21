@@ -9,14 +9,12 @@ import {
 } from '../../services/greenhouseApi';
 import { useTheme } from '../../hooks/useTheme';
 
-function buildEnvText(config) {
-  if (!config?.env || typeof config.env !== 'object') {
-    return '';
-  }
+const mono = { fontFamily: "'Source Code Pro', monospace" };
+const serif = { fontFamily: "'Playfair Display', Georgia, serif" };
 
-  return Object.entries(config.env)
-    .map(([key, value]) => `${key}=${value}`)
-    .join('\n');
+function buildEnvText(config) {
+  if (!config?.env || typeof config.env !== 'object') return '';
+  return Object.entries(config.env).map(([k, v]) => `${k}=${v}`).join('\n');
 }
 
 export default function GreenhouseListPage({ profile, onLogout, onOpenGreenhouse }) {
@@ -47,9 +45,7 @@ export default function GreenhouseListPage({ profile, onLogout, onOpenGreenhouse
     }
   }, []);
 
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
+  useEffect(() => { void refresh(); }, [refresh]);
 
   const runAction = useCallback(async (fn) => {
     setPending(true);
@@ -68,18 +64,13 @@ export default function GreenhouseListPage({ profile, onLogout, onOpenGreenhouse
 
   const handleCreate = async (event) => {
     event.preventDefault();
-    if (!createName.trim()) {
-      setError('Greenhouse name is required.');
-      return;
-    }
-
+    if (!createName.trim()) { setError('Greenhouse name is required.'); return; }
     await runAction(async () => {
       const created = await createGreenhouse({
         name: createName.trim(),
         greenhouseId: createGreenhouseId.trim() || undefined,
         gatewayId: createGatewayId.trim() || undefined,
       });
-
       setCreateName('');
       setCreateGreenhouseId('');
       setCreateGatewayId('');
@@ -89,14 +80,10 @@ export default function GreenhouseListPage({ profile, onLogout, onOpenGreenhouse
 
   const handleRename = async (greenhouse) => {
     const nextName = (renameDrafts[greenhouse.greenhouse_id] || '').trim();
-    if (!nextName) {
-      setError('Provide a new name before saving.');
-      return;
-    }
-
+    if (!nextName) { setError('Provide a new name before saving.'); return; }
     await runAction(async () => {
       await updateGreenhouse({ greenhouseId: greenhouse.greenhouse_id, name: nextName });
-      setRenameDrafts((current) => ({ ...current, [greenhouse.greenhouse_id]: '' }));
+      setRenameDrafts((c) => ({ ...c, [greenhouse.greenhouse_id]: '' }));
       setMessage(`Renamed ${greenhouse.greenhouse_id}.`);
     });
   };
@@ -105,47 +92,33 @@ export default function GreenhouseListPage({ profile, onLogout, onOpenGreenhouse
     const confirmed = window.confirm(
       `Delete greenhouse '${greenhouse.name}' (${greenhouse.greenhouse_id})? This permanently removes its zone/telemetry/alert records.`
     );
-    if (!confirmed) {
-      return;
-    }
-
+    if (!confirmed) return;
     await runAction(async () => {
       await deleteGreenhouse({ greenhouseId: greenhouse.greenhouse_id });
-      setExpandedConfigFor((current) => (current === greenhouse.greenhouse_id ? '' : current));
+      setExpandedConfigFor((c) => (c === greenhouse.greenhouse_id ? '' : c));
       setMessage(`Deleted greenhouse ${greenhouse.greenhouse_id}.`);
     });
   };
 
   const handleToggleConfig = async (greenhouseId) => {
-    if (expandedConfigFor === greenhouseId) {
-      setExpandedConfigFor('');
-      return;
-    }
-
+    if (expandedConfigFor === greenhouseId) { setExpandedConfigFor(''); return; }
     setExpandedConfigFor(greenhouseId);
-    if (configByGreenhouse[greenhouseId]) {
-      return;
-    }
-
+    if (configByGreenhouse[greenhouseId]) return;
     try {
       const config = await getGreenhouseGatewayConfig({ greenhouseId });
-      setConfigByGreenhouse((current) => ({ ...current, [greenhouseId]: config }));
+      setConfigByGreenhouse((c) => ({ ...c, [greenhouseId]: config }));
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : String(nextError));
     }
   };
 
-  const activeConfigText = useMemo(() => {
-    if (!expandedConfigFor) {
-      return '';
-    }
-    return buildEnvText(configByGreenhouse[expandedConfigFor]);
-  }, [configByGreenhouse, expandedConfigFor]);
+  const activeConfigText = useMemo(
+    () => (expandedConfigFor ? buildEnvText(configByGreenhouse[expandedConfigFor]) : ''),
+    [configByGreenhouse, expandedConfigFor]
+  );
 
   const copyActiveConfig = async () => {
-    if (!activeConfigText) {
-      return;
-    }
+    if (!activeConfigText) return;
     try {
       await navigator.clipboard.writeText(activeConfigText);
       setMessage('Gateway environment config copied to clipboard.');
@@ -155,43 +128,27 @@ export default function GreenhouseListPage({ profile, onLogout, onOpenGreenhouse
   };
 
   return (
-    <div className="min-h-screen bg-bg px-4 py-6 sm:px-8">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-        <header className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface px-4 py-3">
-          <div>
-            <h1 className="text-xl font-semibold text-ink">Greenhouses</h1>
-            <p className="text-xs uppercase tracking-[0.14em] text-muted" style={{ fontFamily: "'Source Code Pro', monospace" }}>
-              tenant `{profile?.tenant_id || 'n/a'}` / role `{profile?.role || 'n/a'}`
-            </p>
+    <div className="min-h-screen bg-bg">
+
+      {/* ── Page header ──────────────────────────── */}
+      <header className="border-b border-border bg-surface">
+        <div className="flex items-center justify-between px-5 sm:px-8 h-16">
+          <div className="flex flex-col justify-center">
+            <span className="text-ink leading-tight" style={{ ...serif, fontSize: 'clamp(1.05rem, 2.5vw, 1.25rem)' }}>
+              Greenhouse Management System
+            </span>
+            <span className="text-muted text-[10px] tracking-[0.16em] uppercase mt-0.5" style={mono}>
+              tenant / {profile?.tenant_id || 'n/a'} &nbsp;·&nbsp; role / {profile?.role || 'n/a'}
+            </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="inline-flex min-h-[40px] w-[40px] items-center justify-center rounded border border-border text-muted transition hover:bg-surface2 hover:text-ink"
-              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-            >
-              {isDark ? (
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
-                  <circle cx="12" cy="12" r="5" />
-                  <line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />
-                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-                  <line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" />
-                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
-                </svg>
-              )}
-            </button>
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => void refresh()}
               disabled={pending}
-              className="inline-flex min-h-[40px] items-center rounded border border-border px-3 text-xs font-semibold uppercase tracking-[0.12em] text-ink transition hover:bg-surface2 disabled:cursor-not-allowed disabled:opacity-60"
-              style={{ fontFamily: "'Source Code Pro', monospace" }}
+              className="min-h-[38px] border border-border px-3 text-[10px] uppercase tracking-[0.14em] text-ink hover:bg-surface2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              style={mono}
             >
               Refresh
             </button>
@@ -199,147 +156,195 @@ export default function GreenhouseListPage({ profile, onLogout, onOpenGreenhouse
               type="button"
               onClick={onLogout}
               disabled={pending}
-              className="inline-flex min-h-[40px] items-center rounded border border-crit px-3 text-xs font-semibold uppercase tracking-[0.12em] text-crit transition hover:bg-crit/10 disabled:cursor-not-allowed disabled:opacity-60"
-              style={{ fontFamily: "'Source Code Pro', monospace" }}
+              className="min-h-[38px] border border-crit/40 bg-crit/10 px-3 text-[10px] uppercase tracking-[0.14em] text-crit hover:bg-crit/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              style={mono}
             >
               Logout
             </button>
+            <button
+              onClick={toggleTheme}
+              className="text-muted hover:text-ink transition-colors flex items-center justify-center w-9 h-9 border border-border shrink-0"
+              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {isDark ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+                  <circle cx="12" cy="12" r="5" />
+                  <line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />
+                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                  <line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" />
+                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+                </svg>
+              )}
+            </button>
           </div>
-        </header>
+        </div>
+      </header>
 
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 p-5 sm:p-7">
+
+        {/* Feedback banners */}
         {error && (
-          <p className="rounded border border-crit/30 bg-crit/10 px-3 py-2 text-sm text-crit">{error}</p>
+          <p className="border border-crit/30 bg-crit/10 px-3 py-2 text-[10px] tracking-wide text-crit" style={mono}>
+            {error}
+          </p>
         )}
         {!error && message && (
-          <p className="rounded border border-accent/30 bg-accent/10 px-3 py-2 text-sm text-ink">{message}</p>
+          <p className="border border-accent/30 bg-accent/10 px-3 py-2 text-[10px] tracking-wide text-ink" style={mono}>
+            {message}
+          </p>
         )}
 
-        <section className="rounded-lg border border-border bg-surface p-4">
-          <h2 className="text-base font-semibold text-ink">Add Greenhouse</h2>
-          <form className="mt-3 grid gap-3 md:grid-cols-4" onSubmit={handleCreate}>
+        {/* ── Add Greenhouse ──────────────────────── */}
+        <section className="border border-border bg-surface">
+          <div className="border-b border-border px-4 py-3">
+            <h2 className="text-xl text-ink leading-none" style={serif}>Add Greenhouse</h2>
+          </div>
+          <form className="p-4 grid gap-3 md:grid-cols-4" onSubmit={handleCreate}>
             <input
-              className="min-h-[40px] rounded border border-border bg-surface2 px-3 text-sm text-ink outline-none focus:border-accent"
+              className="min-h-[40px] border border-border bg-bg px-3 text-sm text-ink outline-none focus:border-accent transition-colors"
+              style={mono}
               type="text"
               placeholder="Greenhouse name"
               value={createName}
-              onChange={(event) => setCreateName(event.target.value)}
+              onChange={(e) => setCreateName(e.target.value)}
               required
             />
             <input
-              className="min-h-[40px] rounded border border-border bg-surface2 px-3 text-sm text-ink outline-none focus:border-accent"
+              className="min-h-[40px] border border-border bg-bg px-3 text-sm text-ink outline-none focus:border-accent transition-colors"
+              style={mono}
               type="text"
               placeholder="greenhouse_id (optional)"
               value={createGreenhouseId}
-              onChange={(event) => setCreateGreenhouseId(event.target.value)}
+              onChange={(e) => setCreateGreenhouseId(e.target.value)}
             />
             <input
-              className="min-h-[40px] rounded border border-border bg-surface2 px-3 text-sm text-ink outline-none focus:border-accent"
+              className="min-h-[40px] border border-border bg-bg px-3 text-sm text-ink outline-none focus:border-accent transition-colors"
+              style={mono}
               type="text"
               placeholder="gateway_id (optional)"
               value={createGatewayId}
-              onChange={(event) => setCreateGatewayId(event.target.value)}
+              onChange={(e) => setCreateGatewayId(e.target.value)}
             />
             <button
               type="submit"
               disabled={pending}
-              className="min-h-[40px] rounded bg-accent px-3 text-xs font-semibold uppercase tracking-[0.12em] text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
-              style={{ fontFamily: "'Source Code Pro', monospace" }}
+              className="min-h-[40px] border border-accent/40 bg-accent/10 px-3 text-[10px] uppercase tracking-widest text-accent hover:bg-accent/20 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+              style={mono}
             >
               Create
             </button>
           </form>
         </section>
 
-        <section className="rounded-lg border border-border bg-surface">
-          <div className="border-b border-border px-4 py-3">
-            <h2 className="text-base font-semibold text-ink">Registered Greenhouses</h2>
-            <p className="text-xs text-muted">Each greenhouse maps to one gateway for this MVP.</p>
+        {/* ── Greenhouse list ─────────────────────── */}
+        <section className="border border-border bg-surface">
+          <div className="border-b border-border px-4 py-3 flex items-end justify-between">
+            <h2 className="text-xl text-ink leading-none" style={serif}>Registered Greenhouses</h2>
+            <span className="text-[10px] tracking-widest uppercase text-muted" style={mono}>
+              {loading ? '…' : `${items.length} total`}
+            </span>
           </div>
 
-          <div className="grid gap-3 p-4">
+          <div className="flex flex-col gap-0">
             {loading ? (
-              <p className="text-sm text-muted">Loading greenhouses...</p>
+              <p className="px-4 py-6 text-[10px] tracking-widest uppercase text-muted" style={mono}>
+                Loading greenhouses…
+              </p>
             ) : items.length === 0 ? (
-              <p className="text-sm text-muted">No greenhouses yet. Create your first one above.</p>
+              <p className="px-4 py-6 text-[10px] tracking-widest uppercase text-muted" style={mono}>
+                No greenhouses yet — create your first one above.
+              </p>
             ) : (
               items.map((greenhouse) => (
                 <article
                   key={greenhouse.greenhouse_id}
-                  className="rounded border border-border/70 bg-surface2/40 px-3 py-3"
+                  className="border-b border-border/50 last:border-b-0 px-4 py-4"
                 >
-                  <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm font-semibold text-ink">{greenhouse.name}</p>
-                      <p className="text-xs text-muted">greenhouse_id: {greenhouse.greenhouse_id}</p>
-                      <p className="text-xs text-muted">gateway_id: {greenhouse.gateway_id}</p>
+                      <p className="text-ink text-base leading-snug" style={serif}>
+                        {greenhouse.name}
+                      </p>
+                      <p className="text-[10px] tracking-widest text-muted mt-0.5" style={mono}>
+                        {greenhouse.greenhouse_id}
+                      </p>
+                      <p className="text-[10px] text-muted" style={mono}>
+                        gateway / {greenhouse.gateway_id || 'none'}
+                      </p>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
                       <button
                         type="button"
                         onClick={() => onOpenGreenhouse(greenhouse.greenhouse_id)}
-                        className="min-h-[34px] rounded border border-border px-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink transition hover:bg-surface"
-                        style={{ fontFamily: "'Source Code Pro', monospace" }}
+                        className="min-h-[34px] border border-accent/40 bg-accent/10 px-3 text-[10px] uppercase tracking-widest text-accent hover:bg-accent/20 transition-colors"
+                        style={mono}
                       >
                         Open
                       </button>
                       <button
                         type="button"
                         onClick={() => void handleToggleConfig(greenhouse.greenhouse_id)}
-                        className="min-h-[34px] rounded border border-border px-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink transition hover:bg-surface"
-                        style={{ fontFamily: "'Source Code Pro', monospace" }}
+                        className="min-h-[34px] border border-border px-3 text-[10px] uppercase tracking-widest text-ink hover:bg-surface2 transition-colors"
+                        style={mono}
                       >
-                        {expandedConfigFor === greenhouse.greenhouse_id ? 'Hide Info' : 'Info'}
+                        {expandedConfigFor === greenhouse.greenhouse_id ? 'Hide' : 'Info'}
                       </button>
                       <button
                         type="button"
                         onClick={() => void handleDelete(greenhouse)}
                         disabled={pending}
-                        className="min-h-[34px] rounded border border-crit px-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-crit transition hover:bg-crit/10 disabled:cursor-not-allowed disabled:opacity-60"
-                        style={{ fontFamily: "'Source Code Pro', monospace" }}
+                        className="min-h-[34px] border border-crit/40 bg-crit/10 px-3 text-[10px] uppercase tracking-widest text-crit hover:bg-crit/20 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                        style={mono}
                       >
                         Delete
                       </button>
                     </div>
                   </div>
 
+                  {/* Rename row */}
                   <div className="mt-3 flex flex-wrap items-center gap-2">
                     <input
                       type="text"
                       value={renameDrafts[greenhouse.greenhouse_id] || ''}
-                      onChange={(event) => setRenameDrafts((current) => ({
-                        ...current,
-                        [greenhouse.greenhouse_id]: event.target.value,
-                      }))}
+                      onChange={(e) => setRenameDrafts((c) => ({ ...c, [greenhouse.greenhouse_id]: e.target.value }))}
                       placeholder="Rename greenhouse"
-                      className="min-h-[40px] flex-1 rounded border border-border bg-surface px-3 text-sm text-ink outline-none focus:border-accent"
+                      className="min-h-[36px] flex-1 border border-border bg-bg px-3 text-sm text-ink outline-none focus:border-accent transition-colors"
+                      style={mono}
                     />
                     <button
                       type="button"
                       onClick={() => void handleRename(greenhouse)}
                       disabled={pending}
-                      className="min-h-[40px] rounded border border-border px-3 text-xs font-semibold uppercase tracking-[0.12em] text-ink transition hover:bg-surface disabled:cursor-not-allowed disabled:opacity-60"
-                      style={{ fontFamily: "'Source Code Pro', monospace" }}
+                      className="min-h-[36px] border border-border px-3 text-[10px] uppercase tracking-widest text-ink hover:bg-surface2 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                      style={mono}
                     >
                       Rename
                     </button>
                   </div>
 
+                  {/* Gateway config expand */}
                   {expandedConfigFor === greenhouse.greenhouse_id && (
-                    <div className="mt-3 rounded border border-border bg-surface px-3 py-3">
+                    <div className="mt-3 border border-border bg-bg px-3 py-3">
                       <div className="mb-2 flex items-center justify-between gap-2">
-                        <p className="text-xs font-semibold uppercase tracking-[0.1em] text-muted">Gateway Config</p>
+                        <span className="text-[10px] tracking-widest uppercase text-muted" style={mono}>
+                          Gateway Config
+                        </span>
                         <button
                           type="button"
                           onClick={() => void copyActiveConfig()}
-                          className="min-h-[30px] rounded border border-border px-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-ink transition hover:bg-surface2"
-                          style={{ fontFamily: "'Source Code Pro', monospace" }}
+                          className="min-h-[28px] border border-border px-2 text-[10px] uppercase tracking-widest text-ink hover:bg-surface transition-colors"
+                          style={mono}
                         >
                           Copy
                         </button>
                       </div>
-                      <pre className="whitespace-pre-wrap break-all rounded border border-border/70 bg-surface2 p-2 text-[11px] text-ink">
-                        {buildEnvText(configByGreenhouse[greenhouse.greenhouse_id]) || 'Loading config...'}
+                      <pre className="whitespace-pre-wrap break-all text-[11px] text-accent" style={mono}>
+                        {buildEnvText(configByGreenhouse[greenhouse.greenhouse_id]) || 'Loading config…'}
                       </pre>
                     </div>
                   )}
