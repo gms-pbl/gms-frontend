@@ -1,6 +1,6 @@
 # GMS Frontend Workspace
 
-React frontend workspace for greenhouse operations UI.
+React frontend workspace for greenhouse operations.
 
 ## Folder Structure
 
@@ -8,11 +8,11 @@ React frontend workspace for greenhouse operations UI.
 
 ## Current UI Scope
 
-- `/zones` is connected to live backend APIs.
-- `/zones` includes a device control modal (actuator commands + live status).
-- `/zones` live readings and command ACK status come from backend-persisted state.
-- `/zones` marks devices as `LIVE` / `OFFLINE` and supports availability filtering (`Live`, `Offline`, `All`; default `Live`).
-- `/` dashboard still uses local mock hooks for sensor and alert feeds.
+- Session auth flow (tenant signup, login, logout, profile bootstrap).
+- Tenant-scoped greenhouse management page (`/g`).
+- Greenhouse-scoped zone/device management page (`/g/{greenhouse_id}`).
+- Device control modal with live readings, output commands, and command ACK polling.
+- `/` dashboard remains mock-driven for now.
 
 ## Stack
 
@@ -46,62 +46,70 @@ npm run lint
 
 ## Environment Variables
 
-Create `frontend/frontend/.env.local` if you need custom values:
+Create `frontend/frontend/.env.local` only if needed:
 
 ```env
 VITE_API_BASE_URL=/api
-VITE_TENANT_ID=tenant-demo
-VITE_GREENHOUSE_ID=greenhouse-demo
 ```
 
-Meaning:
+- `VITE_API_BASE_URL` - backend REST base URL for all frontend requests
 
-- `VITE_API_BASE_URL` - backend REST base URL used by frontend requests
-- `VITE_TENANT_ID` - current tenant scope (future: each user/org has own resources)
-- `VITE_GREENHOUSE_ID` - current greenhouse scope under that tenant
-
-Example future scenario:
-
-- tenant `acme` with greenhouse `west-site`
-- tenant `biofarm` with greenhouse `north-site`
-
-Frontend simply switches context values and talks to the same API contract.
-
-By default, Vite dev server proxies `/api/*` to `http://localhost:8081/*`, which avoids local browser CORS noise.
+By default, Vite proxies `/api/*` to `http://127.0.0.1:8081/*`.
 
 ## Route Map
 
-- `/` - dashboard shell (mock-driven today)
-- `/zones` - zone registration and management (live backend)
+- `/login` - tenant user login
+- `/signup` - create tenant + initial admin user
+- `/g` - greenhouse list for current authenticated tenant
+- `/g/{greenhouse_id}` - zone/device operations for one greenhouse
+- `/` - demo dashboard shell (mock data)
 
-## `/zones` API Purpose
+## API Usage Map
 
-- `GET /v1/zones/registry` - refresh discovered + assigned lists
-- `POST /v1/zones/assign` - bind a discovered device to a zone
-- `POST /v1/zones/unassign` - move zone back to discovered state
-- `POST /v1/zones/sync` - push full zone snapshot to gateway
-- `POST /v1/zones/command` - send per-device command (used by control modal)
-- `GET /v1/zones/command-ack?command_id=...` - poll gateway ACK state for last command
-- `GET /v1/dashboard/live?greenhouse_id=...&zone_id=...` - poll latest persisted metric keys for selected device/zone
+### Auth
 
-## Device Control Modal (`/zones`)
+- `POST /v1/auth/signup`
+- `POST /v1/auth/login`
+- `POST /v1/auth/logout`
+- `GET /v1/auth/me`
 
-When opening a device card from `/zones`, the modal currently provides:
+### Greenhouses
 
-- OUT control grid (`OUT_00..OUT_07`) with HIGH/LOW commands
-- Sensor value section (`air_*`, `soil_*`)
-- Input status section (`din_00..din_03`)
-- Output status driven by live telemetry (`dout_00..dout_07`)
-- Command ACK panel (`PENDING/FORWARDED/APPLIED/FAILED/TIMEOUT`) for last output command
+- `GET /v1/g`
+- `POST /v1/g`
+- `PATCH /v1/g/{greenhouse_id}`
+- `DELETE /v1/g/{greenhouse_id}`
+- `GET /v1/g/{greenhouse_id}/gateway-config`
 
-Command payload shape used by frontend:
+### Zones and Commands (greenhouse-scoped)
+
+- `GET /v1/g/{greenhouse_id}/zones/registry`
+- `POST /v1/g/{greenhouse_id}/zones/assign`
+- `POST /v1/g/{greenhouse_id}/zones/unassign`
+- `POST /v1/g/{greenhouse_id}/zones/sync`
+- `POST /v1/g/{greenhouse_id}/zones/command`
+- `GET /v1/g/{greenhouse_id}/zones/command-ack?command_id=...`
+- `GET /v1/dashboard/live?greenhouse_id=...&zone_id=...`
+
+Note: auth session is cookie-based, so requests use `credentials: "include"`.
+
+## Device Control Modal (`/g/{greenhouse_id}`)
+
+When opening an assigned zone device:
+
+- OUT control grid (`OUT_00..OUT_07`) with HIGH/LOW actions
+- Sensor readings (`air_*`, `soil_*`)
+- Input states (`din_00..din_03`)
+- Output states from telemetry (`dout_00..dout_07`)
+- ACK panel (`PENDING/FORWARDED/APPLIED/FAILED/TIMEOUT`) for latest command
+
+Command payload shape sent by frontend:
 
 ```json
 {
-  "tenant_id": "tenant-demo",
-  "greenhouse_id": "greenhouse-demo",
-  "device_id": "portenta-xxxx",
   "action": "SET_OUTPUT",
+  "device_id": "portenta-xxxx",
+  "zone_id": "zone-a",
   "payload": {
     "channel": 0,
     "state": 1
@@ -109,36 +117,22 @@ Command payload shape used by frontend:
 }
 ```
 
-## Data Source Matrix
-
-| Page | Source | Purpose |
-|---|---|---|
-| `/zones` | backend REST | operational zone management (persistent backend state) |
-| `/` | local hooks | temporary dashboard simulation |
-
 ## Recommended Local Workflow
 
-1. Start gateway stack:
+1. Start gateway stack (single-node or cluster manager):
 
 ```bash
 cd firmware/src/gateway
 ./scripts/up.sh
+# or
+./scripts/up-cluster.sh
 ```
 
-2. Start backend (dockerized or native):
+2. Start backend:
 
 ```bash
 cd backend/infra
 ./scripts/up.sh
-```
-
-This local stack runs backend plus TimescaleDB persistence; gateway MQTT is expected on `localhost:1883`.
-
-Follow backend logs while starting:
-
-```bash
-cd backend/infra
-./scripts/up.sh -v
 ```
 
 3. Start frontend:
@@ -150,19 +144,19 @@ npm run dev
 
 4. Open:
 
-- `http://localhost:5173/zones`
-- `http://localhost:4173` (simulator UI)
+- `http://localhost:5173/g`
+- `http://localhost:4173` (simulator/cluster manager)
 
 ## Troubleshooting
 
-- If Vite shows `http proxy error ... ECONNREFUSED` for `/v1/...`, backend is down or still starting.
-- Verify backend health with `curl http://localhost:8081/actuator/health`.
-- If backend just restarted, wait a few seconds for Spring Boot + Flyway to finish booting.
+- `http proxy error ... ECONNREFUSED` for `/v1/...` means backend is down/restarting.
+- Health check: `curl http://localhost:8081/actuator/health`.
+- If requests return `401`, authenticate again from `/login`.
+- If greenhouse rename fails with CORS/preflight, verify backend is running latest config (PATCH allowed).
 
 ## Contributor Notes
 
-- Zone UI contract lives in `frontend/frontend/src/hooks/useZoneRegistry.js`.
-- Runtime config defaults live in `frontend/frontend/src/config/runtimeConfig.js`.
-- Dashboard migration target is replacing:
-  - `frontend/frontend/src/hooks/useSensorData.js`
-  - `frontend/frontend/src/hooks/useAlerts.js`
+- Auth and app routing: `frontend/frontend/src/App.jsx`
+- API client/session behavior: `frontend/frontend/src/services/apiClient.js`
+- Greenhouse APIs: `frontend/frontend/src/services/greenhouseApi.js`
+- Zone APIs: `frontend/frontend/src/services/zonesApi.js`
