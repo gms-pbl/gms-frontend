@@ -2,12 +2,15 @@ import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { useTheme } from '../../hooks/useTheme';
 
+const mono = { fontFamily: "'Source Code Pro', monospace" };
+const serif = { fontFamily: "'Playfair Display', Georgia, serif" };
+
 function ThemeToggle() {
   const { isDark, toggleTheme } = useTheme();
   return (
     <button
       onClick={toggleTheme}
-      className="fixed top-4 right-4 z-50 text-muted hover:text-ink transition-colors flex items-center justify-center w-8 h-8 rounded border border-border bg-surface"
+      className="fixed top-4 right-4 z-50 text-muted hover:text-ink transition-colors flex items-center justify-center w-8 h-8 border border-border bg-surface"
       aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
     >
       {isDark ? (
@@ -39,7 +42,6 @@ export default function LoginPage({ onLogin, onGoSignup, infoMessage }) {
       setError('Username and password are required.');
       return;
     }
-
     setSubmitting(true);
     setError('');
     try {
@@ -52,66 +54,80 @@ export default function LoginPage({ onLogin, onGoSignup, infoMessage }) {
   };
 
   return (
-    <div className="min-h-screen bg-bg px-4 py-8 sm:px-8">
+    <div className="min-h-screen bg-bg flex items-center justify-center px-4 py-8">
       <ThemeToggle />
-      <div className="mx-auto flex w-full max-w-md flex-col gap-4 rounded-lg border border-border bg-surface p-5 shadow-sm">
-        <div>
-          <h1 className="text-2xl font-semibold text-ink">Tenant Login</h1>
-          <p className="mt-1 text-sm text-muted">Sign in with your admin/operator account.</p>
+      <div className="w-full max-w-sm border border-border bg-surface">
+
+        {/* Header bar */}
+        <div className="border-b border-border px-5 py-4">
+          <h1 className="text-2xl text-ink leading-none" style={serif}>
+            Tenant Login
+          </h1>
+          <p className="text-[10px] tracking-widest uppercase text-muted mt-1.5" style={mono}>
+            Sign in with your admin or operator account
+          </p>
         </div>
 
-        {infoMessage && (
-          <p className="rounded border border-accent/30 bg-accent/10 px-3 py-2 text-sm text-ink">{infoMessage}</p>
-        )}
+        <div className="px-5 py-5 flex flex-col gap-4">
+          {infoMessage && (
+            <p className="border border-accent/30 bg-accent/10 px-3 py-2 text-[10px] tracking-wide text-ink" style={mono}>
+              {infoMessage}
+            </p>
+          )}
 
-        {error && (
-          <p className="rounded border border-crit/30 bg-crit/10 px-3 py-2 text-sm text-crit">{error}</p>
-        )}
+          {error && (
+            <p className="border border-crit/30 bg-crit/10 px-3 py-2 text-[10px] tracking-wide text-crit" style={mono}>
+              {error}
+            </p>
+          )}
 
-        <form className="grid gap-3" onSubmit={handleSubmit}>
-          <label className="grid gap-1 text-sm text-ink">
-            Username
-            <input
-              className="min-h-[40px] rounded border border-border bg-surface2 px-3 text-sm text-ink outline-none focus:border-accent"
-              type="text"
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
-              autoComplete="username"
-              required
-            />
-          </label>
+          <form className="flex flex-col gap-3" onSubmit={handleSubmit}>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[10px] tracking-widest uppercase text-muted" style={mono}>Username</span>
+              <input
+                className="min-h-[40px] border border-border bg-bg px-3 text-sm text-ink outline-none focus:border-accent transition-colors"
+                style={mono}
+                type="text"
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
+                autoComplete="username"
+                required
+              />
+            </label>
 
-          <label className="grid gap-1 text-sm text-ink">
-            Password
-            <input
-              className="min-h-[40px] rounded border border-border bg-surface2 px-3 text-sm text-ink outline-none focus:border-accent"
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              autoComplete="current-password"
-              required
-            />
-          </label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[10px] tracking-widest uppercase text-muted" style={mono}>Password</span>
+              <input
+                className="min-h-[40px] border border-border bg-bg px-3 text-sm text-ink outline-none focus:border-accent transition-colors"
+                style={mono}
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                autoComplete="current-password"
+                required
+              />
+            </label>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="mt-1 min-h-[42px] rounded bg-accent px-4 text-sm font-semibold uppercase tracking-[0.08em] text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
-            style={{ fontFamily: "'Source Code Pro', monospace" }}
-          >
-            {submitting ? 'Signing In...' : 'Login'}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="mt-1 min-h-[42px] border border-accent/40 bg-accent/10 px-4 text-[10px] uppercase tracking-widest text-accent hover:bg-accent/20 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+              style={mono}
+            >
+              {submitting ? 'Signing In...' : 'Login'}
+            </button>
+          </form>
 
-        <div className="flex items-center justify-end border-t border-border pt-3">
-          <button
-            type="button"
-            onClick={onGoSignup}
-            className="text-xs font-semibold uppercase tracking-[0.08em] text-accent hover:brightness-90"
-            style={{ fontFamily: "'Source Code Pro', monospace" }}
-          >
-            Create tenant
-          </button>
+          <div className="flex items-center justify-end border-t border-border pt-3">
+            <button
+              type="button"
+              onClick={onGoSignup}
+              className="text-[10px] uppercase tracking-widest text-accent hover:text-ink transition-colors"
+              style={mono}
+            >
+              Create tenant →
+            </button>
+          </div>
         </div>
       </div>
     </div>
