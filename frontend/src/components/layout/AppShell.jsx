@@ -8,6 +8,8 @@ import MobileNav from './MobileNav';
 import AlertPanel from '../alerts/AlertPanel';
 import AlertBadge from '../alerts/AlertBadge';
 import { useTheme } from '../../hooks/useTheme';
+import { useSensorData } from '../../hooks/useSensorData';
+import { useAlerts } from '../../hooks/useAlerts';
 
 function useClock() {
   const [time, setTime] = useState(() =>
@@ -22,10 +24,13 @@ function useClock() {
   return time;
 }
 
-export default function AppShell({ siteName, readings, alerts, onAcknowledge, onDismiss }) {
+export default function AppShell({ greenhouseId }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const time = useClock();
   const { isDark, toggleTheme } = useTheme();
+
+  const readings = useSensorData({ greenhouseId });
+  const { alerts, acknowledge, dismiss } = useAlerts();
 
   const unackedCritical = alerts.filter(
     a => a.severity === 'CRITICAL' && !a.acknowledged
@@ -43,13 +48,13 @@ export default function AppShell({ siteName, readings, alerts, onAcknowledge, on
               className="text-ink font-semibold leading-tight"
               style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 'clamp(1.05rem, 2.5vw, 1.25rem)' }}
             >
-              {siteName}
+              Greenhouse Management System
             </span>
             <span
               className="text-muted text-[10px] tracking-[0.16em] uppercase mt-0.5 hidden sm:block"
               style={{ fontFamily: "'Source Code Pro', monospace" }}
             >
-              Greenhouse Management System
+              {greenhouseId ? `greenhouse / ${greenhouseId}` : 'sensor dashboard'}
             </span>
           </div>
 
@@ -59,8 +64,17 @@ export default function AppShell({ siteName, readings, alerts, onAcknowledge, on
               className="hidden sm:inline-flex min-h-[38px] items-center rounded border border-border px-3 text-[10px] uppercase tracking-[0.14em] text-ink transition hover:bg-surface2"
               style={{ fontFamily: "'Source Code Pro', monospace" }}
             >
-              Zones
+              Greenhouses
             </a>
+            {greenhouseId && (
+              <a
+                href={`/g/${encodeURIComponent(greenhouseId)}/zones`}
+                className="hidden sm:inline-flex min-h-[38px] items-center rounded border border-border px-3 text-[10px] uppercase tracking-[0.14em] text-ink transition hover:bg-surface2"
+                style={{ fontFamily: "'Source Code Pro', monospace" }}
+              >
+                Zones
+              </a>
+            )}
             <GlobalFeedStatus readings={readings} />
             <button
               onClick={() => setDrawerOpen(true)}
@@ -104,7 +118,7 @@ export default function AppShell({ siteName, readings, alerts, onAcknowledge, on
 
       {/* ── Body ───────────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden">
-        <DesktopSidebar alerts={alerts} onAcknowledge={onAcknowledge} onDismiss={onDismiss} />
+        <DesktopSidebar alerts={alerts} onAcknowledge={acknowledge} onDismiss={dismiss} />
         <main className="flex-1 overflow-y-auto pb-16 lg:pb-0">
           <SensorDashboard readings={readings} />
         </main>
@@ -140,8 +154,8 @@ export default function AppShell({ siteName, readings, alerts, onAcknowledge, on
               <div style={{ height: 'calc(80vh - 24px)' }}>
                 <AlertPanel
                   alerts={alerts}
-                  onAcknowledge={onAcknowledge}
-                  onDismiss={onDismiss}
+                  onAcknowledge={acknowledge}
+                  onDismiss={dismiss}
                   onClose={() => setDrawerOpen(false)}
                 />
               </div>
@@ -154,9 +168,9 @@ export default function AppShell({ siteName, readings, alerts, onAcknowledge, on
 }
 
 AppShell.propTypes = {
-  siteName:      PropTypes.string.isRequired,
-  readings:      PropTypes.array.isRequired,
-  alerts:        PropTypes.array.isRequired,
-  onAcknowledge: PropTypes.func.isRequired,
-  onDismiss:     PropTypes.func.isRequired,
+  greenhouseId: PropTypes.string,
+};
+
+AppShell.defaultProps = {
+  greenhouseId: '',
 };
