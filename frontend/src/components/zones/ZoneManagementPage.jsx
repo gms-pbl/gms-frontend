@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useZoneRegistry } from '../../hooks/useZoneRegistry';
 import ZoneDeviceModal from './ZoneDeviceModal';
+import { useTheme } from '../../hooks/useTheme';
 
 const OFFLINE_AFTER_MS = 45_000;
 
@@ -68,6 +69,7 @@ function formatTimestamp(value) {
 }
 
 export default function ZoneManagementPage({ greenhouseId }) {
+  const { isDark, toggleTheme } = useTheme();
   const {
     registry,
     loading,
@@ -174,13 +176,26 @@ export default function ZoneManagementPage({ greenhouseId }) {
             >
               Greenhouses
             </a>
-            <a
-              href="/"
-              className="inline-flex min-h-[40px] items-center rounded border border-border px-3 text-xs font-semibold uppercase tracking-[0.12em] text-ink transition hover:bg-surface2"
-              style={{ fontFamily: "'Source Code Pro', monospace" }}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="inline-flex min-h-[40px] w-[40px] items-center justify-center rounded border border-border text-muted transition hover:bg-surface2 hover:text-ink"
+              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
             >
-              Dashboard
-            </a>
+              {isDark ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+                  <circle cx="12" cy="12" r="5" />
+                  <line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />
+                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                  <line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" />
+                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+                </svg>
+              )}
+            </button>
             <button
               type="button"
               onClick={() => void refresh()}
