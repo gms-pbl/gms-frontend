@@ -4,6 +4,10 @@ export async function listGreenhouses() {
   return apiRequest('/v1/g', { method: 'GET' });
 }
 
+export async function getGreenhouse({ greenhouseId }) {
+  return apiRequest(`/v1/g/${encodeURIComponent(greenhouseId)}`, { method: 'GET' });
+}
+
 export async function createGreenhouse({ name, greenhouseId, gatewayId }) {
   return apiRequest('/v1/g', {
     method: 'POST',
