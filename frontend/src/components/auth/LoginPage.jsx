@@ -1,5 +1,31 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
+import { useTheme } from '../../hooks/useTheme';
+
+function ThemeToggle() {
+  const { isDark, toggleTheme } = useTheme();
+  return (
+    <button
+      onClick={toggleTheme}
+      className="fixed top-4 right-4 z-50 text-muted hover:text-ink transition-colors flex items-center justify-center w-8 h-8 rounded border border-border bg-surface"
+      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+    >
+      {isDark ? (
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+          <circle cx="12" cy="12" r="5" />
+          <line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+          <line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" />
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+        </svg>
+      ) : (
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+        </svg>
+      )}
+    </button>
+  );
+}
 
 export default function LoginPage({ onLogin, onGoSignup, infoMessage }) {
   const [username, setUsername] = useState('');
@@ -27,6 +53,7 @@ export default function LoginPage({ onLogin, onGoSignup, infoMessage }) {
 
   return (
     <div className="min-h-screen bg-bg px-4 py-8 sm:px-8">
+      <ThemeToggle />
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 rounded-lg border border-border bg-surface p-5 shadow-sm">
         <div>
           <h1 className="text-2xl font-semibold text-ink">Tenant Login</h1>
@@ -76,10 +103,7 @@ export default function LoginPage({ onLogin, onGoSignup, infoMessage }) {
           </button>
         </form>
 
-        <div className="flex items-center justify-between border-t border-border pt-3">
-          <a href="/" className="text-xs text-muted underline underline-offset-2 hover:text-ink">
-            View demo dashboard
-          </a>
+        <div className="flex items-center justify-end border-t border-border pt-3">
           <button
             type="button"
             onClick={onGoSignup}
