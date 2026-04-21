@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { API_BASE_URL } from '../config/runtimeConfig';
+import { apiRequest } from '../services/apiClient';
 
 export function useSensorData({ enabled = true } = {}) {
   const [readings, setReadings] = useState([]);
@@ -10,9 +10,8 @@ export function useSensorData({ enabled = true } = {}) {
     }
 
     const fetchReadings = () =>
-      fetch(`${API_BASE_URL}/v1/dashboard/live`)
-        .then(r => r.json())
-        .then(setReadings)
+      apiRequest('/v1/dashboard/live')
+        .then(data => setReadings(Array.isArray(data) ? data : []))
         .catch(() => {});
 
     fetchReadings();
