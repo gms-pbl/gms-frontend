@@ -5,7 +5,6 @@ import LoginPage from './components/auth/LoginPage';
 import SignupPage from './components/auth/SignupPage';
 import GreenhouseListPage from './components/greenhouse/GreenhouseListPage';
 import ZoneManagementPage from './components/zones/ZoneManagementPage';
-import { MOCK_ALERTS, MOCK_SENSOR_READINGS, MOCK_SITE } from './services/mockData';
 import { getMe, login, logout, signupTenantAdmin } from './services/authApi';
 
 function navigate(pathname, { replace = false } = {}) {
@@ -51,8 +50,6 @@ export default function App() {
   const [authProfile, setAuthProfile] = useState(null);
   const [loginInfoMessage, setLoginInfoMessage] = useState('');
 
-  const [demoAlerts, setDemoAlerts] = useState(MOCK_ALERTS);
-
   useEffect(() => {
     let cancelled = false;
 
@@ -81,15 +78,19 @@ export default function App() {
     };
   }, []);
 
+  // Redirect legacy /zones path
   useEffect(() => {
-    if (!pathname.startsWith('/zones')) {
-      return;
+    if (pathname.startsWith('/zones')) {
+      navigate('/g', { replace: true });
     }
-    navigate('/g', { replace: true });
   }, [pathname]);
 
   const greenhouseRouteMatch = useMemo(() => pathname.match(/^\/g\/([^/]+)$/), [pathname]);
-  const greenhouseId = greenhouseRouteMatch ? decodeURIComponent(greenhouseRouteMatch[1]) : '';
+  const greenhouseZonesMatch = useMemo(() => pathname.match(/^\/g\/([^/]+)\/zones$/), [pathname]);
+  const greenhouseId = useMemo(() => {
+    const match = greenhouseRouteMatch || greenhouseZonesMatch;
+    return match ? decodeURIComponent(match[1]) : '';
+  }, [greenhouseRouteMatch, greenhouseZonesMatch]);
 
   const handleLogin = async ({ username, password }) => {
     await login({ username, password });
@@ -112,14 +113,6 @@ export default function App() {
       setAuthProfile(null);
       navigate('/login', { replace: true });
     }
-  };
-
-  const acknowledgeDemoAlert = (id) => {
-    setDemoAlerts((current) => current.map((item) => (item.id === id ? { ...item, acknowledged: true } : item)));
-  };
-
-  const dismissDemoAlert = (id) => {
-    setDemoAlerts((current) => current.filter((item) => item.id !== id));
   };
 
   if (pathname === '/login') {
@@ -164,7 +157,8 @@ export default function App() {
     );
   }
 
-  if (greenhouseRouteMatch) {
+  // /g/:id/zones — zone management for a specific greenhouse
+  if (greenhouseZonesMatch) {
     if (authLoading) {
       return <LoadingScreen label="Loading session..." />;
     }
@@ -181,31 +175,34 @@ export default function App() {
     return <ZoneManagementPage greenhouseId={greenhouseId} />;
   }
 
-  if (pathname === '/') {
-    return (
-      <AppShell
-        siteName={MOCK_SITE.name}
-        readings={MOCK_SENSOR_READINGS}
-        alerts={demoAlerts}
-        onAcknowledge={acknowledgeDemoAlert}
-        onDismiss={dismissDemoAlert}
-      />
-    );
+  // /g/:id — sensor dashboard for a specific greenhouse
+  if (greenhouseRouteMatch) {
+    if (authLoading) {
+      return <LoadingScreen label="Loading session..." />;
+    }
+    if (!authProfile) {
+      return (
+        <LoginPage
+          infoMessage="Please login to view the sensor dashboard."
+          onLogin={handleLogin}
+          onGoSignup={() => navigate('/signup')}
+        />
+      );
+    }
+
+    return <AppShell greenhouseId={greenhouseId} />;
   }
 
-  return (
-    <div className="min-h-screen bg-bg px-4 py-8 sm:px-8">
-      <div className="mx-auto w-full max-w-md rounded-lg border border-border bg-surface px-4 py-5">
-        <p className="text-sm text-muted">Route not found.</p>
-        <div className="mt-3 flex gap-3 text-sm">
-          <a className="text-accent underline underline-offset-2" href="/">
-            Demo dashboard
-          </a>
-          <a className="text-accent underline underline-offset-2" href="/g">
-            Greenhouses
-          </a>
-        </div>
-      </div>
-    </div>
-  );
+  // Root and any unknown path → redirect to login (or greenhouse list if already authed)
+  if (authLoading) {
+    return <LoadingScreen label="Loading session..." />;
+  }
+
+  if (authProfile) {
+    navigate('/g', { replace: true });
+    return null;
+  }
+
+  navigate('/login', { replace: true });
+  return null;
 }
