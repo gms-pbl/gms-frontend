@@ -16,6 +16,74 @@ export const MOCK_SENSOR_READINGS = [
   { sensor_key: 'soil_salinity',   value: 1.2,   unit: 'ppt',   status: 'OK',   lastUpdatedAt: new Date().toISOString() },
 ];
 
+export const MOCK_IRRIGATION_ZONES = [
+  {
+    id: 'zone-001',
+    label: 'Bed A — Tomatoes',
+    status: 'ACTIVE',
+    flow_rate_lph: 48,
+    last_run: '2026-04-21T06:00:00Z',
+    duration_min: 20,
+    scheduled_next: '2026-04-22T06:00:00Z',
+    countdown: null,
+  },
+  {
+    id: 'zone-002',
+    label: 'Bed B — Peppers',
+    status: 'IDLE',
+    flow_rate_lph: 32,
+    last_run: '2026-04-21T06:20:00Z',
+    duration_min: 15,
+    scheduled_next: '2026-04-22T06:20:00Z',
+    countdown: null,
+  },
+  {
+    id: 'zone-003',
+    label: 'Bed C — Lettuce',
+    status: 'SCHEDULED',
+    flow_rate_lph: 24,
+    last_run: '2026-04-20T18:00:00Z',
+    duration_min: 10,
+    scheduled_next: '2026-04-21T18:00:00Z',
+    countdown: null,
+  },
+  {
+    id: 'zone-004',
+    label: 'Bed D — Herbs',
+    status: 'FAULT',
+    flow_rate_lph: 0,
+    last_run: '2026-04-20T12:00:00Z',
+    duration_min: 8,
+    scheduled_next: null,
+    countdown: null,
+  },
+  {
+    id: 'zone-005',
+    label: 'Row E — Cucumbers',
+    status: 'IDLE',
+    flow_rate_lph: 56,
+    last_run: '2026-04-21T07:00:00Z',
+    duration_min: 25,
+    scheduled_next: '2026-04-22T07:00:00Z',
+    countdown: null,
+  },
+  {
+    id: 'zone-006',
+    label: 'Row F — Basil',
+    status: 'IDLE',
+    flow_rate_lph: 18,
+    last_run: '2026-04-21T05:30:00Z',
+    duration_min: 12,
+    scheduled_next: '2026-04-22T05:30:00Z',
+    countdown: null,
+  },
+];
+
+export const MOCK_SENSOR_HISTORY = {
+  data_points: [],
+  thresholds: null,
+};
+
 export const MOCK_ALERTS = [
   {
     id: 'a1',
