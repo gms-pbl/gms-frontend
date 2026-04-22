@@ -28,7 +28,7 @@ function formatValue(val) {
   return val.toFixed(2);
 }
 
-export default function SensorCard({ reading, index }) {
+export default function SensorCard({ reading, index, onClick }) {
   const { isStale } = useDataFreshness(reading.lastUpdatedAt);
   const label = SENSOR_LABELS[reading.sensor_key] ?? reading.sensor_key;
   const cfg = STATUS_CFG[reading.status] ?? STATUS_CFG.OK;
@@ -38,7 +38,8 @@ export default function SensorCard({ reading, index }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: isStale ? 0.5 : 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.06 }}
-      className="relative flex flex-col bg-surface border border-border overflow-hidden"
+      onClick={onClick}
+      className={`relative flex flex-col bg-surface border border-border overflow-hidden ${onClick ? 'cursor-pointer hover:border-accent/50 transition-colors' : ''}`}
       style={{ borderLeftColor: cfg.border, borderLeftWidth: '3px' }}
     >
       {/* Value + label */}
@@ -87,5 +88,10 @@ SensorCard.propTypes = {
     status:        PropTypes.string.isRequired,
     lastUpdatedAt: PropTypes.string.isRequired,
   }).isRequired,
-  index: PropTypes.number.isRequired,
+  index:   PropTypes.number.isRequired,
+  onClick: PropTypes.func,
+};
+
+SensorCard.defaultProps = {
+  onClick: null,
 };

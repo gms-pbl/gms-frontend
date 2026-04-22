@@ -1,35 +1,61 @@
 import { useState, useEffect } from 'react';
-import { API_BASE_URL } from '../config/runtimeConfig';
-import { MOCK_SENSOR_HISTORY } from '../services/mockData';
+import { apiRequest } from '../services/apiClient';
 
-export function useHistoricalData(siteId, sensorKey, range = '24h') {
+const GRANULARITY_FOR_RANGE = {
+  '24h': 'hourly',
+  '7d':  'hourly',
+  '30d': 'daily',
+};
+
+function rangeToFrom(range) {
+  const now = new Date();
+  const from = new Date(now);
+  if (range === '7d')       from.setDate(now.getDate() - 7);
+  else if (range === '30d') from.setDate(now.getDate() - 30);
+  else                      from.setHours(now.getHours() - 24);
+  return { from: from.toISOString(), to: now.toISOString() };
+}
+
+export function useHistoricalData({ greenhouseId, sensorKey, zoneId, range = '24h', granularity }) {
   const [data, setData] = useState([]);
-  const [thresholds, setThresholds] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [meta, setMeta] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const resolvedGranularity = granularity ?? GRANULARITY_FOR_RANGE[range] ?? 'hourly';
+
   useEffect(() => {
-    if (!sensorKey) return;
+    if (!sensorKey || !greenhouseId) {
+      setData([]);
+      setMeta(null);
+      setError(greenhouseId ? null : 'Select a greenhouse to view history.');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
-    fetch(`${API_BASE_URL}/v1/sites/${siteId}/sensors/${sensorKey}/history?range=${range}`)
-      .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    const { from, to } = rangeToFrom(range);
+    const params = new URLSearchParams({
+      greenhouse_id: greenhouseId,
+      sensor_key:    sensorKey,
+      granularity:   resolvedGranularity,
+      from,
+      to,
+    });
+    if (zoneId) params.set('zone_id', zoneId);
+
+    apiRequest(`/v1/dashboard/history?${params}`)
       .then(body => {
-        setData(body.data_points ?? []);
-        setThresholds(body.thresholds ?? null);
+        setData(body.points ?? []);
+        setMeta({ unit: body.unit ?? '', granularity: body.granularity });
       })
-      .catch(() => {
-        const mock = MOCK_SENSOR_HISTORY[sensorKey];
-        if (mock) {
-          setData(mock.data_points);
-          setThresholds(mock.thresholds ?? null);
-        } else {
-          setError('No historical data available for this sensor.');
-        }
+      .catch(err => {
+        setError(err.message || 'Failed to load historical data.');
+        setData([]);
       })
       .finally(() => setIsLoading(false));
-  }, [siteId, sensorKey, range]);
+  }, [greenhouseId, sensorKey, zoneId, range, resolvedGranularity]);
 
-  return { data, thresholds, isLoading, error };
+  return { data, meta, isLoading, error };
 }
