@@ -3,22 +3,24 @@ import { motion } from 'motion/react';
 import CountdownTimer from './CountdownTimer';
 
 const STATUS_CFG = {
-  ACTIVE:    { pill: 'bg-accent/10 text-accent border-accent/30',   bar: 'var(--color-accent)' },
-  IDLE:      { pill: 'bg-muted/10  text-muted  border-muted/30',    bar: 'var(--color-border)' },
-  SCHEDULED: { pill: 'bg-warn/10  text-warn   border-warn/30',      bar: 'var(--color-warn)'   },
-  FAULT:     { pill: 'bg-crit/10  text-crit   border-crit/30',      bar: 'var(--color-crit)'   },
+  ACTIVE:  { pill: 'bg-accent/10 text-accent border-accent/30', bar: 'var(--color-accent)' },
+  IDLE:    { pill: 'bg-muted/10  text-muted  border-muted/30',  bar: 'var(--color-border)' },
+  OFFLINE: { pill: 'bg-crit/10  text-crit   border-crit/30',   bar: 'var(--color-crit)'   },
 };
 
-function formatTime(iso) {
+function formatRelative(iso) {
   if (!iso) return '—';
-  const d = new Date(iso);
-  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  const diff = Date.now() - new Date(iso).getTime();
+  const s = Math.floor(diff / 1000);
+  if (s < 60)  return `${s}s ago`;
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  return `${Math.floor(s / 3600)}h ago`;
 }
 
 export default function ZoneCard({ zone, index, onToggle, onManualOverride }) {
   const cfg = STATUS_CFG[zone.status] ?? STATUS_CFG.IDLE;
-  const isActive    = zone.status === 'ACTIVE';
-  const isFault     = zone.status === 'FAULT';
+  const isActive  = zone.status === 'ACTIVE';
+  const isOffline = zone.status === 'OFFLINE';
   const inCountdown = typeof zone.countdown === 'number' && zone.countdown > 0;
 
   return (
@@ -47,7 +49,10 @@ export default function ZoneCard({ zone, index, onToggle, onManualOverride }) {
             </span>
             {inCountdown && (
               <span className="flex items-center gap-1">
-                <span className="text-[9px] text-warn uppercase tracking-widest" style={{ fontFamily: "'Source Code Pro', monospace" }}>
+                <span
+                  className="text-[9px] text-warn uppercase tracking-widest"
+                  style={{ fontFamily: "'Source Code Pro', monospace" }}
+                >
                   override
                 </span>
                 <CountdownTimer seconds={zone.countdown} />
@@ -56,9 +61,8 @@ export default function ZoneCard({ zone, index, onToggle, onManualOverride }) {
           </div>
         </div>
 
-        {/* Toggle button */}
         <button
-          disabled={isFault}
+          disabled={isOffline}
           onClick={() => onToggle(zone.id, !isActive)}
           className={`shrink-0 min-w-[52px] text-center text-[9px] uppercase tracking-widest px-2 py-1.5 border transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
             isActive
@@ -72,23 +76,25 @@ export default function ZoneCard({ zone, index, onToggle, onManualOverride }) {
       </div>
 
       {/* Meta row */}
-      <div className="flex items-center gap-4 px-3 pb-2.5 border-t border-border/40 pt-2">
-        {isActive && (
-          <span className="text-[9px] text-accent" style={{ fontFamily: "'Source Code Pro', monospace" }}>
-            {zone.flow_rate_lph} L/h
-          </span>
-        )}
-        <span className="text-[9px] text-muted" style={{ fontFamily: "'Source Code Pro', monospace" }}>
-          last {formatTime(zone.last_run)}
+      <div className="flex items-center gap-3 px-3 pb-2.5 border-t border-border/40 pt-2">
+        <span
+          className="text-[9px] text-muted truncate"
+          style={{ fontFamily: "'Source Code Pro', monospace" }}
+          title={zone.deviceId}
+        >
+          {zone.deviceId}
         </span>
-        <span className="text-[9px] text-muted ml-auto" style={{ fontFamily: "'Source Code Pro', monospace" }}>
-          next {formatTime(zone.scheduled_next)}
+        <span
+          className="text-[9px] text-muted ml-auto shrink-0"
+          style={{ fontFamily: "'Source Code Pro', monospace" }}
+        >
+          {formatRelative(zone.lastSeenAt)}
         </span>
 
-        {!isActive && !isFault && !inCountdown && (
+        {!isActive && !isOffline && !inCountdown && (
           <button
             onClick={() => onManualOverride(zone.id)}
-            className="text-[9px] uppercase tracking-widest text-warn border border-warn/30 bg-warn/5 hover:bg-warn/15 px-1.5 py-0.5 transition-colors ml-1"
+            className="text-[9px] uppercase tracking-widest text-warn border border-warn/30 bg-warn/5 hover:bg-warn/15 px-1.5 py-0.5 transition-colors ml-1 shrink-0"
             style={{ fontFamily: "'Source Code Pro', monospace" }}
           >
             30s
@@ -101,14 +107,13 @@ export default function ZoneCard({ zone, index, onToggle, onManualOverride }) {
 
 ZoneCard.propTypes = {
   zone: PropTypes.shape({
-    id:             PropTypes.string.isRequired,
-    label:          PropTypes.string.isRequired,
-    status:         PropTypes.oneOf(['ACTIVE', 'IDLE', 'SCHEDULED', 'FAULT']).isRequired,
-    flow_rate_lph:  PropTypes.number.isRequired,
-    last_run:       PropTypes.string,
-    duration_min:   PropTypes.number,
-    scheduled_next: PropTypes.string,
-    countdown:      PropTypes.number,
+    id:          PropTypes.string.isRequired,
+    zoneId:      PropTypes.string,
+    label:       PropTypes.string.isRequired,
+    deviceId:    PropTypes.string,
+    status:      PropTypes.oneOf(['ACTIVE', 'IDLE', 'OFFLINE']).isRequired,
+    countdown:   PropTypes.number,
+    lastSeenAt:  PropTypes.string,
   }).isRequired,
   index:            PropTypes.number.isRequired,
   onToggle:         PropTypes.func.isRequired,

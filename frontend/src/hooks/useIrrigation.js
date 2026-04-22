@@ -1,81 +1,168 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { API_BASE_URL } from '../config/runtimeConfig';
+import { getZoneRegistry, sendZoneCommand, getZoneLiveReadings } from '../services/zonesApi';
 import { MOCK_IRRIGATION_ZONES } from '../services/mockData';
 
-export function useIrrigation(siteId) {
+const IRRIGATION_CHANNEL = 'DOUT_00';
+const LIVENESS_MS = 45_000;
+
+function isLive(lastSeenAt) {
+  if (!lastSeenAt) return false;
+  return Date.now() - new Date(lastSeenAt).getTime() < LIVENESS_MS;
+}
+
+function buildZones(assigned, readings) {
+  return assigned.map(z => {
+    const live = isLive(z.last_seen_at);
+    const relayKey = IRRIGATION_CHANNEL.toLowerCase().replace('_', '_');
+    const relayReading = readings.find(
+      r => r.zone_id === z.zone_id && r.sensor_key === relayKey
+    );
+    const relayOn = relayReading ? relayReading.value === 1 : false;
+
+    return {
+      id:          z.device_id,
+      zoneId:      z.zone_id,
+      label:       z.zone_name || z.device_id,
+      deviceId:    z.device_id,
+      status:      !live ? 'OFFLINE' : relayOn ? 'ACTIVE' : 'IDLE',
+      lastSeenAt:  z.last_seen_at,
+      countdown:   null,
+    };
+  });
+}
+
+export function useIrrigation(greenhouseId) {
   const [zones, setZones] = useState([]);
   const [loading, setLoading] = useState(true);
   const timers = useRef({});
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/v1/sites/${siteId}/irrigation/zones`)
-      .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
-      .then(d => setZones(d.zones))
-      .catch(() => setZones(MOCK_IRRIGATION_ZONES))
-      .finally(() => setLoading(false));
-
-    return () => { Object.values(timers.current).forEach(clearInterval); };
-  }, [siteId]);
-
-  const toggleZone = useCallback((zoneId, active) => {
-    if (timers.current[zoneId]) {
-      clearInterval(timers.current[zoneId]);
-      delete timers.current[zoneId];
+    if (!greenhouseId) {
+      setZones(MOCK_IRRIGATION_ZONES);
+      setLoading(false);
+      return;
     }
+
+    let cancelled = false;
+    setLoading(true);
+
+    Promise.all([
+      getZoneRegistry({ greenhouseId }),
+      getZoneLiveReadings({ greenhouseId }).catch(() => []),
+    ])
+      .then(([registry, readings]) => {
+        if (cancelled) return;
+        const assigned = registry.assigned ?? [];
+        setZones(buildZones(assigned, readings));
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setZones([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+      Object.values(timers.current).forEach(clearInterval);
+    };
+  }, [greenhouseId]);
+
+  const toggleZone = useCallback((deviceId, active) => {
+    if (!greenhouseId) return;
+
+    if (timers.current[deviceId]) {
+      clearInterval(timers.current[deviceId]);
+      delete timers.current[deviceId];
+    }
+
     setZones(prev => prev.map(z =>
-      z.id === zoneId ? { ...z, status: active ? 'ACTIVE' : 'IDLE', countdown: null } : z
+      z.id === deviceId
+        ? { ...z, status: active ? 'ACTIVE' : 'IDLE', countdown: null }
+        : z
     ));
-    fetch(`${API_BASE_URL}/v1/sites/${siteId}/irrigation/zones/${zoneId}/toggle`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ active }),
-    }).catch(() => {});
-  }, [siteId]);
 
-  const manualOverride = useCallback((zoneId) => {
-    if (timers.current[zoneId]) {
-      clearInterval(timers.current[zoneId]);
-    }
+    const zone = zones.find(z => z.id === deviceId);
+    if (!zone) return;
+
+    sendZoneCommand({
+      greenhouseId,
+      action:   'SET_OUTPUT',
+      zoneId:   zone.zoneId,
+      deviceId: zone.deviceId,
+      payload:  { channel: IRRIGATION_CHANNEL, state: active ? 'HIGH' : 'LOW' },
+    }).catch(() => {
+      setZones(prev => prev.map(z =>
+        z.id === deviceId ? { ...z, status: 'IDLE' } : z
+      ));
+    });
+  }, [greenhouseId, zones]);
+
+  const manualOverride = useCallback((deviceId) => {
+    if (!greenhouseId) return;
+
+    if (timers.current[deviceId]) clearInterval(timers.current[deviceId]);
+
     let remaining = 30;
     setZones(prev => prev.map(z =>
-      z.id === zoneId ? { ...z, status: 'ACTIVE', countdown: remaining } : z
+      z.id === deviceId ? { ...z, status: 'ACTIVE', countdown: remaining } : z
     ));
-    fetch(`${API_BASE_URL}/v1/sites/${siteId}/irrigation/zones/${zoneId}/toggle`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ active: true }),
-    }).catch(() => {});
 
-    timers.current[zoneId] = setInterval(() => {
+    const zone = zones.find(z => z.id === deviceId);
+    if (zone) {
+      sendZoneCommand({
+        greenhouseId,
+        action:   'SET_OUTPUT',
+        zoneId:   zone.zoneId,
+        deviceId: zone.deviceId,
+        payload:  { channel: IRRIGATION_CHANNEL, state: 'HIGH' },
+      }).catch(() => {});
+    }
+
+    timers.current[deviceId] = setInterval(() => {
       remaining -= 1;
       setZones(prev => prev.map(z =>
-        z.id === zoneId ? { ...z, countdown: remaining } : z
+        z.id === deviceId ? { ...z, countdown: remaining } : z
       ));
+
       if (remaining <= 0) {
-        clearInterval(timers.current[zoneId]);
-        delete timers.current[zoneId];
+        clearInterval(timers.current[deviceId]);
+        delete timers.current[deviceId];
         setZones(prev => prev.map(z =>
-          z.id === zoneId ? { ...z, status: 'IDLE', countdown: null } : z
+          z.id === deviceId ? { ...z, status: 'IDLE', countdown: null } : z
         ));
-        fetch(`${API_BASE_URL}/v1/sites/${siteId}/irrigation/zones/${zoneId}/toggle`, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ active: false }),
-        }).catch(() => {});
+        const z = zones.find(z => z.id === deviceId);
+        if (z) {
+          sendZoneCommand({
+            greenhouseId,
+            action:   'SET_OUTPUT',
+            zoneId:   z.zoneId,
+            deviceId: z.deviceId,
+            payload:  { channel: IRRIGATION_CHANNEL, state: 'LOW' },
+          }).catch(() => {});
+        }
       }
     }, 1000);
-  }, [siteId]);
+  }, [greenhouseId, zones]);
 
   const emergencyStop = useCallback(() => {
     Object.values(timers.current).forEach(clearInterval);
     timers.current = {};
-    setZones(prev => prev.map(z => ({ ...z, status: 'IDLE', countdown: null })));
-    fetch(`${API_BASE_URL}/v1/sites/${siteId}/irrigation/emergency-stop`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({}),
-    }).catch(() => {});
-  }, [siteId]);
+
+    const activeZones = zones.filter(z => z.status === 'ACTIVE');
+    setZones(prev => prev.map(z => ({ ...z, status: z.status === 'OFFLINE' ? 'OFFLINE' : 'IDLE', countdown: null })));
+
+    activeZones.forEach(z => {
+      sendZoneCommand({
+        greenhouseId,
+        action:   'SET_OUTPUT',
+        zoneId:   z.zoneId,
+        deviceId: z.deviceId,
+        payload:  { channel: IRRIGATION_CHANNEL, state: 'LOW' },
+      }).catch(() => {});
+    });
+  }, [greenhouseId, zones]);
 
   return { zones, loading, toggleZone, manualOverride, emergencyStop };
 }
