@@ -14,14 +14,35 @@ export function useSensorData({ enabled = true, greenhouseId = '', zoneId = '' }
     if (zoneId) params.set('zone_id', zoneId);
     const suffix = params.toString() ? `?${params.toString()}` : '';
 
-    const fetchReadings = () =>
-      apiRequest(`/v1/dashboard/live${suffix}`)
-        .then(data => setReadings(Array.isArray(data) ? data : []))
-        .catch(() => {});
+    let cancelled = false;
 
-    fetchReadings();
-    const id = setInterval(fetchReadings, 10000);
-    return () => clearInterval(id);
+    const fetchReadings = () => {
+      const controller = new AbortController();
+      apiRequest(`/v1/dashboard/live${suffix}`, { signal: controller.signal })
+        .then(data => {
+          if (cancelled) return;
+          if (!Array.isArray(data)) { setReadings([]); return; }
+          const fetchedAt = new Date().toISOString();
+          setReadings(data.map(r => ({
+            ...r,
+            lastUpdatedAt: fetchedAt,
+          })));
+        })
+        .catch(() => {});
+      return controller;
+    };
+
+    let activeController = fetchReadings();
+    const id = setInterval(() => {
+      activeController?.abort();
+      activeController = fetchReadings();
+    }, 10000);
+
+    return () => {
+      cancelled = true;
+      activeController?.abort();
+      clearInterval(id);
+    };
   }, [enabled, greenhouseId, zoneId]);
 
   return enabled ? readings : [];
