@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { getZoneRegistry, sendZoneCommand, getZoneLiveReadings } from '../services/zonesApi';
 
 const IRRIGATION_CHANNEL = 'DOUT_00';
-const LIVENESS_MS = 45_000;
+const LIVENESS_MS = 60_000;
 
 function isLive(lastSeenAt) {
   if (!lastSeenAt) return false;
