@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getZoneRegistry, sendZoneCommand, getZoneLiveReadings } from '../services/zonesApi';
-import { MOCK_IRRIGATION_ZONES } from '../services/mockData';
 
 const IRRIGATION_CHANNEL = 'DOUT_00';
 const LIVENESS_MS = 45_000;
@@ -38,7 +37,7 @@ export function useIrrigation(greenhouseId) {
 
   useEffect(() => {
     if (!greenhouseId) {
-      setZones(MOCK_IRRIGATION_ZONES);
+      setZones([]);
       setLoading(false);
       return;
     }
