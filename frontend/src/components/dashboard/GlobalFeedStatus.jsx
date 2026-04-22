@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 
-const STALE_THRESHOLD_MS = 15000;
+const STALE_THRESHOLD_MS = 60000;
 
 function computeStatus(readings) {
   const total = readings.length;
