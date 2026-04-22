@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const STALE_THRESHOLD_MS = 15000;
+const STALE_THRESHOLD_MS = 60_000;
 
 function formatElapsed(ms) {
   const s = Math.floor(ms / 1000);
