@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   LineChart, Line, XAxis, YAxis, Tooltip,
-  ResponsiveContainer, ReferenceLine, CartesianGrid,
+  ResponsiveContainer, CartesianGrid,
 } from 'recharts';
 import { useHistoricalData } from '../../hooks/useHistoricalData';
 
@@ -14,16 +14,17 @@ const RANGES = [
 ];
 
 const SENSOR_LABELS = {
-  soil_moisture:   'Soil Moisture',
-  soil_ec:         'Soil Conductivity',
-  soil_salinity:   'Soil Salinity',
-  soil_temp:       'Soil Temperature',
-  soil_ph:         'Soil pH',
-  soil_nitrogen:   'Nitrogen',
-  soil_phosphorus: 'Phosphorus',
-  soil_potassium:  'Potassium',
-  air_temperature: 'Air Temperature',
-  air_humidity:    'Relative Humidity',
+  air_temp:     'Air Temperature',
+  air_hum:      'Relative Humidity',
+  soil_moist:   'Soil Moisture',
+  soil_temp:    'Soil Temperature',
+  soil_cond:    'Soil Conductivity',
+  soil_ph:      'Soil pH',
+  soil_n:       'Nitrogen',
+  soil_p:       'Phosphorus',
+  soil_k:       'Potassium',
+  soil_salinity:'Soil Salinity',
+  soil_tds:     'Soil TDS',
 };
 
 function formatAxisTime(iso, range) {
