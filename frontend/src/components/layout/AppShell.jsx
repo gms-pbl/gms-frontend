@@ -12,7 +12,7 @@ import { useTheme } from '../../hooks/useTheme';
 import { useSensorData } from '../../hooks/useSensorData';
 import { useAlerts } from '../../hooks/useAlerts';
 import { useIrrigation } from '../../hooks/useIrrigation';
-import { MOCK_SITE } from '../../services/mockData';
+
 
 function useClock() {
   const [time, setTime] = useState(() =>
@@ -35,8 +35,7 @@ export default function AppShell({ greenhouseId }) {
 
   const readings = useSensorData({ greenhouseId });
   const { alerts, acknowledge, dismiss } = useAlerts();
-  const siteId = greenhouseId || MOCK_SITE.id;
-  const { zones, loading: irrigationLoading, toggleZone, manualOverride, emergencyStop } = useIrrigation(siteId);
+  const { zones, loading: irrigationLoading, toggleZone, manualOverride, emergencyStop } = useIrrigation(greenhouseId);
 
   const unackedCritical = alerts.filter(
     a => a.severity === 'CRITICAL' && !a.acknowledged
