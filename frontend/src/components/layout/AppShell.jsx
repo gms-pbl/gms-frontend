@@ -160,7 +160,7 @@ export default function AppShell({ greenhouseId }) {
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.18 }}
               >
-                <SensorDashboard readings={readings} />
+                <SensorDashboard readings={readings} greenhouseId={greenhouseId} />
               </motion.div>
             )}
             {activeView === 'irrigation' && (
