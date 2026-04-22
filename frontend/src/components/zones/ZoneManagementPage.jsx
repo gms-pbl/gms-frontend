@@ -7,7 +7,7 @@ import { useTheme } from '../../hooks/useTheme';
 const mono = { fontFamily: "'Source Code Pro', monospace" };
 const serif = { fontFamily: "'Playfair Display', Georgia, serif" };
 
-const OFFLINE_AFTER_MS = 45_000;
+const OFFLINE_AFTER_MS = 60_000;
 const AVAILABILITY_FILTERS = [
   { value: 'LIVE', label: 'Live' },
   { value: 'OFFLINE', label: 'Offline' },
