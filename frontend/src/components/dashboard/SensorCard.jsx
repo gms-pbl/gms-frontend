@@ -3,17 +3,19 @@ import { motion } from 'motion/react';
 import FreshnessIndicator from './FreshnessIndicator';
 import { useDataFreshness } from '../../hooks/useDataFreshness';
 
+// Keys match the backend's canonical sensor_key values
 const SENSOR_LABELS = {
-  soil_moisture:   'Soil Moisture',
-  soil_ec:         'Soil Conductivity',
-  soil_salinity:   'Soil Salinity',
-  soil_temp:       'Soil Temperature',
-  soil_ph:         'Soil pH',
-  soil_nitrogen:   'Nitrogen',
-  soil_phosphorus: 'Phosphorus',
-  soil_potassium:  'Potassium',
-  air_temperature: 'Air Temperature',
-  air_humidity:    'Relative Humidity',
+  air_temp:     'Air Temperature',
+  air_hum:      'Relative Humidity',
+  soil_moist:   'Soil Moisture',
+  soil_temp:    'Soil Temperature',
+  soil_cond:    'Soil Conductivity',
+  soil_ph:      'Soil pH',
+  soil_n:       'Nitrogen',
+  soil_p:       'Phosphorus',
+  soil_k:       'Potassium',
+  soil_salinity:'Soil Salinity',
+  soil_tds:     'Soil TDS',
 };
 
 const STATUS_CFG = {
@@ -23,6 +25,7 @@ const STATUS_CFG = {
 };
 
 function formatValue(val) {
+  if (val == null || typeof val !== 'number') return '—';
   if (val >= 100) return val.toFixed(0);
   if (val >= 10)  return val.toFixed(1);
   return val.toFixed(2);
