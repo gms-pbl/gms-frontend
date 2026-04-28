@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useZoneRegistry } from '../../hooks/useZoneRegistry';
 import ZoneDeviceModal from './ZoneDeviceModal';
+import ZoneThresholdModal from './ZoneThresholdModal';
 import { useTheme } from '../../hooks/useTheme';
 
 const mono = { fontFamily: "'Source Code Pro', monospace" };
@@ -57,6 +58,7 @@ export default function ZoneManagementPage({ greenhouseId }) {
   const [renameDrafts, setRenameDrafts] = useState({});
   const [message, setMessage] = useState('');
   const [selectedDevice, setSelectedDevice] = useState(null);
+  const [thresholdsZone, setThresholdsZone] = useState(null);
   const [availabilityFilter, setAvailabilityFilter] = useState('LIVE');
 
   const discoveredDevices = useMemo(
@@ -372,6 +374,14 @@ export default function ZoneManagementPage({ greenhouseId }) {
                         >
                           Control
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => setThresholdsZone(zone)}
+                          className="min-h-[30px] border border-border px-2 text-[9px] uppercase tracking-widest text-ink hover:bg-surface2 transition-colors"
+                          style={mono}
+                        >
+                          Thresholds
+                        </button>
                       </div>
                     </div>
 
@@ -416,6 +426,13 @@ export default function ZoneManagementPage({ greenhouseId }) {
           device={selectedDevice}
           greenhouseId={registry?.greenhouse_id ?? greenhouseId ?? ''}
           onNotify={setMessage}
+        />
+
+        <ZoneThresholdModal
+          isOpen={Boolean(thresholdsZone)}
+          onClose={() => setThresholdsZone(null)}
+          zone={thresholdsZone}
+          greenhouseId={registry?.greenhouse_id ?? greenhouseId ?? ''}
         />
       </div>
     </div>

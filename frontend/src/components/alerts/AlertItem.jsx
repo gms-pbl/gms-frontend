@@ -26,18 +26,6 @@ const SEV = {
       </svg>
     ),
   },
-  INFO: {
-    bandColor: 'var(--color-border)',
-    badge: 'bg-surface2 text-muted border-border',
-    msg: 'text-ink/75',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <circle cx="12" cy="12" r="10" />
-        <line x1="12" y1="16" x2="12" y2="12" />
-        <circle cx="12" cy="8" r="0.5" fill="currentColor" />
-      </svg>
-    ),
-  },
 };
 
 function formatTime(iso) {
@@ -46,7 +34,7 @@ function formatTime(iso) {
 }
 
 export default function AlertItem({ alert, onAcknowledge, onDismiss }) {
-  const cfg = SEV[alert.severity] ?? SEV.INFO;
+  const cfg = SEV[alert.severity] ?? SEV.WARNING;
   const isCritical = alert.severity === 'CRITICAL';
 
   return (
@@ -91,15 +79,7 @@ export default function AlertItem({ alert, onAcknowledge, onDismiss }) {
         </p>
 
         <div className="flex gap-1.5 mt-2.5">
-          {alert.severity === 'INFO' ? (
-            <button
-              onClick={() => onDismiss(alert.id)}
-              className="text-[9px] tracking-widest uppercase px-2.5 py-1 border border-border text-muted hover:border-crit hover:text-crit transition-colors rounded-sm min-h-[28px]"
-              style={{ fontFamily: "'Source Code Pro', monospace" }}
-            >
-              dismiss
-            </button>
-          ) : !alert.acknowledged ? (
+          {!alert.acknowledged ? (
             <button
               onClick={() => onAcknowledge(alert.id)}
               className="text-[9px] tracking-widest uppercase px-2.5 py-1 border border-border text-muted hover:border-accent hover:text-accent transition-colors rounded-sm min-h-[28px]"
@@ -125,7 +105,7 @@ export default function AlertItem({ alert, onAcknowledge, onDismiss }) {
 AlertItem.propTypes = {
   alert: PropTypes.shape({
     id:           PropTypes.string.isRequired,
-    severity:     PropTypes.oneOf(['CRITICAL', 'WARNING', 'INFO']).isRequired,
+    severity:     PropTypes.oneOf(['CRITICAL', 'WARNING']).isRequired,
     sensor_key:   PropTypes.string.isRequired,
     message:      PropTypes.string.isRequired,
     triggered_at: PropTypes.string.isRequired,

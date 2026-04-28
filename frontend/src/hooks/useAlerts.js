@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiRequest } from '../services/apiClient';
 
-const SEVERITY_ORDER = { CRITICAL: 0, WARNING: 1, INFO: 2 };
+const SEVERITY_ORDER = { CRITICAL: 0, WARNING: 1 };
 
 function sortAlerts(list) {
   return [...list].sort((a, b) => {
