@@ -5,7 +5,6 @@ import AlertItem from './AlertItem';
 export default function AlertPanel({ alerts, onAcknowledge, onDismiss, onClose }) {
   const critCount = alerts.filter(a => a.severity === 'CRITICAL' && !a.acknowledged).length;
   const warnCount = alerts.filter(a => a.severity === 'WARNING'  && !a.acknowledged).length;
-  const infoCount = alerts.filter(a => a.severity === 'INFO'     && !a.acknowledged).length;
 
   return (
     <div className="flex flex-col h-full">
@@ -34,13 +33,9 @@ export default function AlertPanel({ alerts, onAcknowledge, onDismiss, onClose }
             style={{ fontFamily: "'Source Code Pro', monospace" }}>
             {critCount} critical
           </span>
-          <span className={`flex-1 text-center py-1.5 text-[9px] tracking-widest uppercase border-r border-border/50 ${warnCount > 0 ? 'text-warn bg-warn/8' : 'text-muted'}`}
+          <span className={`flex-1 text-center py-1.5 text-[9px] tracking-widest uppercase ${warnCount > 0 ? 'text-warn bg-warn/8' : 'text-muted'}`}
             style={{ fontFamily: "'Source Code Pro', monospace" }}>
             {warnCount} warning
-          </span>
-          <span className={`flex-1 text-center py-1.5 text-[9px] tracking-widest uppercase ${infoCount > 0 ? 'text-ink/70' : 'text-muted'}`}
-            style={{ fontFamily: "'Source Code Pro', monospace" }}>
-            {infoCount} info
           </span>
         </div>
       </div>
@@ -68,7 +63,7 @@ AlertPanel.propTypes = {
   alerts: PropTypes.arrayOf(
     PropTypes.shape({
       id:           PropTypes.string.isRequired,
-      severity:     PropTypes.oneOf(['CRITICAL', 'WARNING', 'INFO']).isRequired,
+      severity:     PropTypes.oneOf(['CRITICAL', 'WARNING']).isRequired,
       sensor_key:   PropTypes.string.isRequired,
       message:      PropTypes.string.isRequired,
       triggered_at: PropTypes.string.isRequired,
