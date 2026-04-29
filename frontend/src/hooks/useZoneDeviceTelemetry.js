@@ -31,7 +31,12 @@ export function useZoneDeviceTelemetry({ greenhouseId, zoneId, zoneIds, enabled 
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
 
-  const zoneScopes = useMemo(() => normalizeZoneScopes(zoneIds, zoneId), [zoneId, zoneIds]);
+  const zoneScopes = useMemo(
+    () => normalizeZoneScopes(zoneIds, zoneId),
+    // Serialize to a string so inline array props don't cause reference churn
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [zoneId, Array.isArray(zoneIds) ? zoneIds.join('\x00') : '']
+  );
 
   const refresh = useCallback(async () => {
     if (!greenhouseId || zoneScopes.length === 0) {
