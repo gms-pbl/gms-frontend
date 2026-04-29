@@ -1,10 +1,22 @@
 import { useState, useEffect, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { useZoneThresholds } from '../../hooks/useZoneThresholds';
-import { useZoneDeviceTelemetry } from '../../hooks/useZoneDeviceTelemetry';
 
 const mono = { fontFamily: "'Source Code Pro', monospace" };
 const serif = { fontFamily: "'Playfair Display', Georgia, serif" };
+
+const SENSOR_UNITS = {
+  air_temperature: '°C',
+  air_humidity:    '%RH',
+  soil_moisture:   '%',
+  soil_temp:       '°C',
+  soil_ph:         'pH',
+  soil_ec:         'dS/m',
+  soil_nitrogen:   'mg/kg',
+  soil_phosphorus: 'mg/kg',
+  soil_potassium:  'mg/kg',
+  soil_salinity:   'ppt',
+};
 
 const LEVELS = [
   {
@@ -50,50 +62,21 @@ function hasSensorData(levels) {
 export default function ZoneThresholdModal({ isOpen, onClose, zone, greenhouseId }) {
   const [activeSensor, setActiveSensor] = useState(null);
 
-  // Readings drive the sensor list — keys and units come from the API
-  const { readings, loading: telemetryLoading } = useZoneDeviceTelemetry({
-    greenhouseId,
-    zoneIds: [zone?.zone_id, zone?.device_id].filter(Boolean),
-    enabled: isOpen && Boolean(zone),
-    pollMs: 15000,
-  });
-
-  const { thresholds, updateField, save, saving, dirty, reset } = useZoneThresholds({
+  const { thresholds, updateField, save, saving, dirty, reset, loading } = useZoneThresholds({
     greenhouseId,
     zoneId: zone?.zone_id,
   });
 
-  // Sensors from live telemetry (with units) — exclude DIN/DOUT channels
-  const sensorsFromReadings = useMemo(() => {
-    const seen = new Set();
-    return readings
-      .filter((r) => {
-        if (!r.sensor_key) return false;
-        if (seen.has(r.sensor_key)) return false;
-        const k = r.sensor_key.toLowerCase();
-        if (k.startsWith('din_') || k.startsWith('dout_')) return false;
-        seen.add(r.sensor_key);
-        return true;
-      })
-      .map((r) => ({ key: r.sensor_key, label: prettifySensorKey(r.sensor_key), unit: r.unit || '' }));
-  }, [readings]);
-
-  // Sensors that already have saved thresholds (visible even when offline)
-  const sensorsFromThresholds = useMemo(
+  // Sensor list comes from the thresholds response (backend always returns all defaults)
+  const sensors = useMemo(
     () =>
-      Object.entries(thresholds)
-        .filter(([, levels]) => hasSensorData(levels))
-        .map(([key]) => ({ key, label: prettifySensorKey(key), unit: '' })),
+      Object.keys(thresholds).map((key) => ({
+        key,
+        label: prettifySensorKey(key),
+        unit: SENSOR_UNITS[key] ?? '',
+      })),
     [thresholds]
   );
-
-  // Merge: readings override saved entries so units are always shown when available
-  const sensors = useMemo(() => {
-    const map = new Map();
-    for (const s of sensorsFromThresholds) map.set(s.key, s);
-    for (const s of sensorsFromReadings) map.set(s.key, s);
-    return [...map.values()];
-  }, [sensorsFromReadings, sensorsFromThresholds]);
 
   // Auto-select first sensor when list populates
   useEffect(() => {
@@ -172,13 +155,13 @@ export default function ZoneThresholdModal({ isOpen, onClose, zone, greenhouseId
 
           {/* Left: sensor selector */}
           <aside className="w-44 shrink-0 border-r border-border overflow-y-auto">
-            {telemetryLoading && sensors.length === 0 ? (
+            {loading ? (
               <p className="px-3 py-4 text-[9px] uppercase tracking-widest text-muted" style={mono}>
                 Loading…
               </p>
             ) : sensors.length === 0 ? (
               <p className="px-3 py-4 text-[9px] uppercase tracking-widest text-muted leading-relaxed" style={mono}>
-                No sensors. Connect the device to populate.
+                No sensors available.
               </p>
             ) : (
               sensors.map((sensor) => {
@@ -290,7 +273,6 @@ export default function ZoneThresholdModal({ isOpen, onClose, zone, greenhouseId
             )}
           </div>
         </div>
-
       </article>
     </div>
   );
