@@ -19,9 +19,12 @@ const SENSOR_LABELS = {
 };
 
 const STATUS_CFG = {
-  OK:   { border: 'var(--color-accent)', pill: 'bg-accent/10 text-accent border-accent/30',  dot: 'bg-accent' },
-  WARN: { border: 'var(--color-warn)',   pill: 'bg-warn/10 text-warn border-warn/30',         dot: 'bg-warn'   },
-  ERR:  { border: 'var(--color-crit)',   pill: 'bg-crit/10 text-crit border-crit/30',         dot: 'bg-crit'   },
+  OK: { border: 'var(--color-accent)', pill: 'bg-accent/10 text-accent border-accent/30', dot: 'bg-accent', label: 'OK' },
+  INFO: { border: 'var(--color-accent)', pill: 'bg-accent/10 text-accent border-accent/30', dot: 'bg-accent', label: 'OK' },
+  WARNING: { border: 'var(--color-warn)', pill: 'bg-warn/10 text-warn border-warn/30', dot: 'bg-warn', label: 'WARNING' },
+  WARN: { border: 'var(--color-warn)', pill: 'bg-warn/10 text-warn border-warn/30', dot: 'bg-warn', label: 'WARNING' },
+  CRITICAL: { border: 'var(--color-crit)', pill: 'bg-crit/10 text-crit border-crit/30', dot: 'bg-crit', label: 'CRITICAL' },
+  ERR: { border: 'var(--color-crit)', pill: 'bg-crit/10 text-crit border-crit/30', dot: 'bg-crit', label: 'CRITICAL' },
 };
 
 function formatValue(val) {
@@ -74,7 +77,7 @@ export default function SensorCard({ reading, index, onClick }) {
           className={`text-[9px] tracking-widest uppercase px-2 py-0.5 border rounded-sm ${cfg.pill}`}
           style={{ fontFamily: "'Source Code Pro', monospace" }}
         >
-          {reading.status}
+          {cfg.label}
         </span>
       </div>
 

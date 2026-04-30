@@ -22,10 +22,9 @@ export function useSensorData({ enabled = true, greenhouseId = '', zoneId = '' }
         .then(data => {
           if (cancelled) return;
           if (!Array.isArray(data)) { setReadings([]); return; }
-          const fetchedAt = new Date().toISOString();
           setReadings(data.map(r => ({
             ...r,
-            lastUpdatedAt: fetchedAt,
+            lastUpdatedAt: r.lastUpdatedAt ?? new Date().toISOString(),
           })));
         })
         .catch(() => {});

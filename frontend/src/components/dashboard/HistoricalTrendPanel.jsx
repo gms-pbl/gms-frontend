@@ -2,10 +2,11 @@ import PropTypes from 'prop-types';
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  LineChart, Line, XAxis, YAxis, Tooltip,
+  LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine,
   ResponsiveContainer, CartesianGrid,
 } from 'recharts';
 import { useHistoricalData } from '../../hooks/useHistoricalData';
+import { useZoneThresholds } from '../../hooks/useZoneThresholds';
 
 const RANGES = [
   { key: '24h', label: '24 h' },
@@ -57,6 +58,28 @@ function ChartTooltip({ active, payload, label, unit, range }) {
   );
 }
 
+function classifyValue(value, threshold) {
+  if (!threshold || typeof value !== 'number') return 'OK';
+
+  const critical = threshold.critical ?? {};
+  const warn = threshold.warn ?? {};
+  if ((critical.min != null && value < critical.min) || (critical.max != null && value > critical.max)) {
+    return 'CRITICAL';
+  }
+  if ((warn.min != null && value < warn.min) || (warn.max != null && value > warn.max)) {
+    return 'WARNING';
+  }
+  return 'OK';
+}
+
+function dotColor(severity) {
+  switch (severity) {
+    case 'CRITICAL': return 'var(--color-crit)';
+    case 'WARNING': return 'var(--color-warn)';
+    default: return 'var(--color-accent)';
+  }
+}
+
 ChartTooltip.propTypes = {
   active:  PropTypes.bool,
   payload: PropTypes.array,
@@ -77,6 +100,8 @@ export default function HistoricalTrendPanel({ sensorKey, greenhouseId, zoneId, 
 
   const label = SENSOR_LABELS[sensorKey] ?? sensorKey;
   const unit  = meta?.unit ?? '';
+  const { thresholds } = useZoneThresholds({ greenhouseId, zoneId });
+  const sensorThreshold = thresholds?.[sensorKey] ?? null;
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Escape') onClose();
@@ -87,7 +112,11 @@ export default function HistoricalTrendPanel({ sensorKey, greenhouseId, zoneId, 
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
-  const chartData = data.map(p => ({ t: p.timestamp, v: p.value }));
+  const chartData = data.map(p => ({
+    t: p.timestamp,
+    v: p.value,
+    severity: classifyValue(p.value, sensorThreshold),
+  }));
 
   return (
     <AnimatePresence>
@@ -220,13 +249,61 @@ export default function HistoricalTrendPanel({ sensorKey, greenhouseId, zoneId, 
                     content={<ChartTooltip unit={unit} range={range} />}
                     cursor={{ stroke: 'var(--color-accent)', strokeWidth: 1, opacity: 0.4 }}
                   />
+                  {sensorThreshold?.warn?.min != null && (
+                    <ReferenceLine y={sensorThreshold.warn.min} stroke="var(--color-warn)" strokeDasharray="4 4" strokeOpacity={0.7} />
+                  )}
+                  {sensorThreshold?.warn?.max != null && (
+                    <ReferenceLine y={sensorThreshold.warn.max} stroke="var(--color-warn)" strokeDasharray="4 4" strokeOpacity={0.7} />
+                  )}
+                  {sensorThreshold?.critical?.min != null && (
+                    <ReferenceLine y={sensorThreshold.critical.min} stroke="var(--color-crit)" strokeDasharray="2 3" strokeOpacity={0.8} />
+                  )}
+                  {sensorThreshold?.critical?.max != null && (
+                    <ReferenceLine y={sensorThreshold.critical.max} stroke="var(--color-crit)" strokeDasharray="2 3" strokeOpacity={0.8} />
+                  )}
                   <Line
                     type="monotone"
                     dataKey="v"
                     stroke="var(--color-accent)"
                     strokeWidth={1.75}
-                    dot={false}
+                    dot={(props) => {
+                      const { cx, cy, payload } = props;
+                      if (cx == null || cy == null || !payload) return null;
+                      return <circle cx={cx} cy={cy} r={2.5} fill={dotColor(payload.severity)} stroke="none" />;
+                    }}
                     activeDot={{ r: 3, fill: 'var(--color-accent)', strokeWidth: 0 }}
+                    shape={({ points }) => {
+                      if (!points || points.length < 2) return null;
+                      const gradIds = [];
+                      const lines = [];
+                      for (let i = 0; i < points.length - 1; i++) {
+                        const a = points[i];
+                        const b = points[i + 1];
+                        if (a.x == null || a.y == null || b.x == null || b.y == null) continue;
+                        const sevA = chartData[i]?.severity ?? 'OK';
+                        const sevB = chartData[i + 1]?.severity ?? 'OK';
+                        const colorA = dotColor(sevA);
+                        const colorB = dotColor(sevB);
+                        if (colorA === colorB) {
+                          lines.push(<line key={`seg-${i}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={colorA} strokeWidth={1.75} />);
+                        } else {
+                          const gid = `seg-grad-${i}`;
+                          gradIds.push(
+                            <linearGradient key={gid} id={gid} x1={a.x} y1={a.y} x2={b.x} y2={b.y} gradientUnits="userSpaceOnUse">
+                              <stop offset="0%" stopColor={colorA} />
+                              <stop offset="100%" stopColor={colorB} />
+                            </linearGradient>
+                          );
+                          lines.push(<line key={`seg-${i}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={`url(#${gid})`} strokeWidth={1.75} />);
+                        }
+                      }
+                      return (
+                        <g>
+                          <defs>{gradIds}</defs>
+                          {lines}
+                        </g>
+                      );
+                    }}
                   />
                 </LineChart>
               </ResponsiveContainer>

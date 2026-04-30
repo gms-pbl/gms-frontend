@@ -14,8 +14,8 @@ export default function SensorDashboard({ readings, greenhouseId, zones, selecte
   const [selectedKey, setSelectedKey] = useState(null);
 
   const sensorReadings = readings.filter(r => SENSOR_DISPLAY_KEYS.has(r.sensor_key));
-  const warnCount = sensorReadings.filter(r => r.status === 'WARN').length;
-  const errCount  = sensorReadings.filter(r => r.status === 'ERR').length;
+  const warnCount = sensorReadings.filter(r => r.status === 'WARNING').length;
+  const criticalCount = sensorReadings.filter(r => r.status === 'CRITICAL').length;
 
   const selectedZone = zones.find(z => z.zone_id === selectedZoneId) ?? null;
 
@@ -84,9 +84,9 @@ export default function SensorDashboard({ readings, greenhouseId, zones, selecte
           )}
         </div>
         <div className="flex items-center gap-2 mb-0.5">
-          {errCount > 0 && (
+          {criticalCount > 0 && (
             <span className="text-[9px] tracking-widest uppercase px-2 py-0.5 bg-crit/10 text-crit border border-crit/30 rounded-sm" style={{ fontFamily: "'Source Code Pro', monospace" }}>
-              {errCount} error
+              {criticalCount} critical
             </span>
           )}
           {warnCount > 0 && (
@@ -94,7 +94,7 @@ export default function SensorDashboard({ readings, greenhouseId, zones, selecte
               {warnCount} warning
             </span>
           )}
-          {sensorReadings.length > 0 && errCount === 0 && warnCount === 0 && (
+          {sensorReadings.length > 0 && criticalCount === 0 && warnCount === 0 && (
             <span className="text-[9px] tracking-widest uppercase px-2 py-0.5 bg-accent/10 text-accent border border-accent/30 rounded-sm" style={{ fontFamily: "'Source Code Pro', monospace" }}>
               all nominal
             </span>
