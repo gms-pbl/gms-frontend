@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { AnimatePresence } from 'motion/react';
 import AlertItem from './AlertItem';
 
-export default function AlertPanel({ alerts, onAcknowledge, onDismiss, onClose }) {
+export default function AlertPanel({ alerts, onAcknowledge, onDismiss, onClose, zoneNameMap }) {
   const critCount = alerts.filter(a => a.severity === 'CRITICAL' && !a.acknowledged).length;
   const warnCount = alerts.filter(a => a.severity === 'WARNING'  && !a.acknowledged).length;
 
@@ -50,7 +50,7 @@ export default function AlertPanel({ alerts, onAcknowledge, onDismiss, onClose }
         ) : (
           <AnimatePresence initial={false}>
             {alerts.map(alert => (
-              <AlertItem key={alert.id} alert={alert} onAcknowledge={onAcknowledge} onDismiss={onDismiss} />
+              <AlertItem key={alert.id} alert={alert} onAcknowledge={onAcknowledge} onDismiss={onDismiss} zoneNameMap={zoneNameMap} />
             ))}
           </AnimatePresence>
         )}
@@ -63,7 +63,7 @@ AlertPanel.propTypes = {
   alerts: PropTypes.arrayOf(
     PropTypes.shape({
       id:           PropTypes.string.isRequired,
-      severity:     PropTypes.oneOf(['CRITICAL', 'WARNING']).isRequired,
+      severity:     PropTypes.oneOf(['CRITICAL', 'WARNING', 'INFO']).isRequired,
       sensor_key:   PropTypes.string.isRequired,
       message:      PropTypes.string.isRequired,
       triggered_at: PropTypes.string.isRequired,
@@ -73,6 +73,7 @@ AlertPanel.propTypes = {
   onAcknowledge: PropTypes.func.isRequired,
   onDismiss:     PropTypes.func.isRequired,
   onClose:       PropTypes.func,
+  zoneNameMap:   PropTypes.object,
 };
 
-AlertPanel.defaultProps = { onClose: null };
+AlertPanel.defaultProps = { onClose: null, zoneNameMap: {} };

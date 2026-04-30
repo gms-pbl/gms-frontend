@@ -1,21 +1,23 @@
 import { useState, useEffect, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { useZoneThresholds } from '../../hooks/useZoneThresholds';
+import { useZoneDeviceTelemetry } from '../../hooks/useZoneDeviceTelemetry';
 
 const mono = { fontFamily: "'Source Code Pro', monospace" };
 const serif = { fontFamily: "'Playfair Display', Georgia, serif" };
 
 const SENSOR_UNITS = {
-  air_temperature: '°C',
-  air_humidity:    '%RH',
-  soil_moisture:   '%',
+  air_temp:      '°C',
+  air_hum:       '%RH',
+  soil_moist:    '%',
   soil_temp:       '°C',
   soil_ph:         'pH',
-  soil_ec:         'dS/m',
-  soil_nitrogen:   'mg/kg',
-  soil_phosphorus: 'mg/kg',
-  soil_potassium:  'mg/kg',
+  soil_cond:     'dS/m',
+  soil_n:        'mg/kg',
+  soil_p:        'mg/kg',
+  soil_k:        'mg/kg',
   soil_salinity:   'ppt',
+  soil_tds:      'ppm',
 };
 
 const LEVELS = [
@@ -52,6 +54,21 @@ function prettifySensorKey(key) {
   return key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+function statusTone(status) {
+  switch (String(status || '').toUpperCase()) {
+    case 'APPLIED':
+      return 'border-accent/40 bg-accent/10 text-accent';
+    case 'FAILED':
+    case 'ERROR':
+    case 'TIMEOUT':
+      return 'border-crit/40 bg-crit/10 text-crit';
+    case 'PENDING':
+      return 'border-warn/40 bg-warn/10 text-warn';
+    default:
+      return 'border-border text-muted';
+  }
+}
+
 function hasSensorData(levels) {
   if (!levels) return false;
   return Object.values(levels).some(
@@ -59,12 +76,42 @@ function hasSensorData(levels) {
   );
 }
 
+function sensorStatusTone(status) {
+  switch (String(status || '').toUpperCase()) {
+    case 'CRITICAL':
+      return { dot: 'text-crit', badge: 'border-crit/30 bg-crit/10 text-crit', label: 'critical' };
+    case 'WARNING':
+      return { dot: 'text-warn', badge: 'border-warn/30 bg-warn/10 text-warn', label: 'warning' };
+    default:
+      return { dot: 'text-accent', badge: 'border-accent/30 bg-accent/10 text-accent', label: 'ok' };
+  }
+}
+
 export default function ZoneThresholdModal({ isOpen, onClose, zone, greenhouseId }) {
   const [activeSensor, setActiveSensor] = useState(null);
 
-  const { thresholds, updateField, save, saving, dirty, reset, loading } = useZoneThresholds({
+  const {
+    thresholds,
+    updateField,
+    save,
+    saving,
+    dirty,
+    reset,
+    loading,
+    validationErrors,
+    applyStatus,
+    configVersion,
+    error,
+  } = useZoneThresholds({
     greenhouseId,
     zoneId: zone?.zone_id,
+  });
+
+  const { readings: liveReadings } = useZoneDeviceTelemetry({
+    greenhouseId,
+    zoneId: zone?.zone_id,
+    enabled: Boolean(isOpen && greenhouseId && zone?.zone_id),
+    pollMs: 3000,
   });
 
   // Sensor list comes from the thresholds response (backend always returns all defaults)
@@ -78,12 +125,14 @@ export default function ZoneThresholdModal({ isOpen, onClose, zone, greenhouseId
     [thresholds]
   );
 
-  // Auto-select first sensor when list populates
-  useEffect(() => {
-    if (sensors.length > 0 && (!activeSensor || !sensors.find((s) => s.key === activeSensor))) {
-      setActiveSensor(sensors[0].key);
-    }
-  }, [sensors, activeSensor]);
+  const selectedSensorKey = activeSensor && sensors.find((s) => s.key === activeSensor)
+    ? activeSensor
+    : sensors[0]?.key ?? null;
+
+  const liveReadingBySensor = useMemo(
+    () => Object.fromEntries((liveReadings ?? []).map((reading) => [reading.sensor_key, reading])),
+    [liveReadings]
+  );
 
   // Escape key
   useEffect(() => {
@@ -95,10 +144,13 @@ export default function ZoneThresholdModal({ isOpen, onClose, zone, greenhouseId
 
   if (!isOpen || !zone) return null;
 
-  const activeSensorMeta = sensors.find((s) => s.key === activeSensor);
-  const activeThresholds = activeSensor ? (thresholds[activeSensor] ?? {}) : {};
+  const activeSensorMeta = sensors.find((s) => s.key === selectedSensorKey);
+  const activeThresholds = selectedSensorKey ? (thresholds[selectedSensorKey] ?? {}) : {};
+  const activeLiveReading = selectedSensorKey ? liveReadingBySensor[selectedSensorKey] ?? null : null;
+  const activeLiveTone = sensorStatusTone(activeLiveReading?.status);
 
   const handleSave = async () => { await save(); };
+  const status = applyStatus?.status || (configVersion > 0 ? 'SAVED' : 'DEFAULTS');
 
   const handleClose = () => {
     if (dirty) reset();
@@ -130,10 +182,13 @@ export default function ZoneThresholdModal({ isOpen, onClose, zone, greenhouseId
           </div>
 
           <div className="flex items-center gap-2">
+            <div className={`min-h-[36px] border px-3 py-2 text-[9px] uppercase tracking-widest ${statusTone(status)}`} style={mono}>
+              v{configVersion || 0} / {status}
+            </div>
             <button
               type="button"
               onClick={handleSave}
-              disabled={saving || !dirty}
+              disabled={saving || !dirty || validationErrors.length > 0}
               className="min-h-[36px] border border-accent/40 bg-accent/10 px-3 text-[9px] uppercase tracking-widest text-accent hover:bg-accent/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               style={mono}
             >
@@ -165,8 +220,9 @@ export default function ZoneThresholdModal({ isOpen, onClose, zone, greenhouseId
               </p>
             ) : (
               sensors.map((sensor) => {
-                const isActive = sensor.key === activeSensor;
+                const isActive = sensor.key === selectedSensorKey;
                 const hasData = hasSensorData(thresholds[sensor.key]);
+                const tone = sensorStatusTone(liveReadingBySensor[sensor.key]?.status);
                 return (
                   <button
                     key={sensor.key}
@@ -188,7 +244,7 @@ export default function ZoneThresholdModal({ isOpen, onClose, zone, greenhouseId
                     </p>
                     <p className="text-[9px] text-muted mt-0.5 flex items-center gap-1" style={mono}>
                       {sensor.unit || '—'}
-                      {hasData && <span className="text-accent">●</span>}
+                      {hasData && <span className={tone.dot}>●</span>}
                     </p>
                   </button>
                 );
@@ -198,6 +254,20 @@ export default function ZoneThresholdModal({ isOpen, onClose, zone, greenhouseId
 
           {/* Right: threshold fields */}
           <div className="flex-1 overflow-y-auto p-4">
+            {(error || validationErrors.length > 0 || applyStatus?.reason) && (
+              <div className="mb-3 border border-border bg-surface2 px-3 py-2 text-[10px] text-muted" style={mono}>
+                {error && <p className="text-crit">{error}</p>}
+                {!error && validationErrors.slice(0, 3).map((item) => (
+                  <p key={item} className="text-warn">{item}</p>
+                ))}
+                {!error && validationErrors.length > 3 && (
+                  <p className="text-warn">{validationErrors.length - 3} more validation issues</p>
+                )}
+                {!error && validationErrors.length === 0 && applyStatus?.reason && (
+                  <p>{applyStatus.reason}</p>
+                )}
+              </div>
+            )}
             {!activeSensorMeta ? (
               <div className="flex items-center justify-center h-full py-12">
                 <p className="text-[10px] uppercase tracking-widest text-muted text-center" style={mono}>
@@ -215,6 +285,12 @@ export default function ZoneThresholdModal({ isOpen, onClose, zone, greenhouseId
                       </span>
                     )}
                   </p>
+                  {activeLiveReading && (
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-[9px] uppercase tracking-widest" style={mono}>
+                      <span className={`border px-2 py-1 ${activeLiveTone.badge}`}>{activeLiveTone.label}</span>
+                      <span className="text-muted">value {Number(activeLiveReading.value).toFixed(2)} {activeLiveReading.unit || activeSensorMeta.unit || ''}</span>
+                    </div>
+                  )}
                   <p className="text-[10px] text-muted mt-1" style={mono}>
                     Set min / max bounds per alert level. Leave blank to disable that level.
                   </p>
@@ -243,7 +319,7 @@ export default function ZoneThresholdModal({ isOpen, onClose, zone, greenhouseId
                               type="number"
                               step="any"
                               value={levelData.min ?? ''}
-                              onChange={(e) => updateField(activeSensor, level.key, 'min', e.target.value)}
+                              onChange={(e) => updateField(selectedSensorKey, level.key, 'min', e.target.value)}
                               placeholder="—"
                               className={`min-h-[36px] border border-border bg-bg px-3 text-sm text-ink outline-none transition-colors ${level.focusBorder}`}
                               style={mono}
@@ -258,7 +334,7 @@ export default function ZoneThresholdModal({ isOpen, onClose, zone, greenhouseId
                               type="number"
                               step="any"
                               value={levelData.max ?? ''}
-                              onChange={(e) => updateField(activeSensor, level.key, 'max', e.target.value)}
+                              onChange={(e) => updateField(selectedSensorKey, level.key, 'max', e.target.value)}
                               placeholder="—"
                               className={`min-h-[36px] border border-border bg-bg px-3 text-sm text-ink outline-none transition-colors ${level.focusBorder}`}
                               style={mono}

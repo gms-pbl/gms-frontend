@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { apiRequest } from '../services/apiClient';
 
 const SEVERITY_ORDER = { CRITICAL: 0, WARNING: 1 };
+const ALERT_POLL_MS = 5000;
 
 function sortAlerts(list) {
   return [...list].sort((a, b) => {
@@ -15,12 +16,27 @@ export function useAlerts({ enabled = true } = {}) {
 
   useEffect(() => {
     if (!enabled) {
-      return;
+      return undefined;
     }
 
-    apiRequest('/v1/alerts')
-      .then(data => setAlerts(sortAlerts(Array.isArray(data) ? data : [])))
-      .catch(() => {});
+    let cancelled = false;
+
+    const refresh = () => {
+      apiRequest('/v1/alerts')
+        .then(data => {
+          if (cancelled) return;
+          setAlerts(sortAlerts(Array.isArray(data) ? data : []));
+        })
+        .catch(() => {});
+    };
+
+    refresh();
+    const id = setInterval(refresh, ALERT_POLL_MS);
+
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
   }, [enabled]);
 
   const acknowledge = useCallback((id) => {

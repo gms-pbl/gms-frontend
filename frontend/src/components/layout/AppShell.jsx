@@ -3,10 +3,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import SensorDashboard from '../dashboard/SensorDashboard';
 import GlobalFeedStatus from '../dashboard/GlobalFeedStatus';
-import DesktopSidebar from './DesktopSidebar';
 import MobileNav from './MobileNav';
 import AlertPanel from '../alerts/AlertPanel';
-import AlertBadge from '../alerts/AlertBadge';
 import IrrigationControlPanel from '../irrigation/IrrigationControlPanel';
 import { useTheme } from '../../hooks/useTheme';
 import { useSensorData } from '../../hooks/useSensorData';
@@ -28,7 +26,6 @@ function useClock() {
 }
 
 export default function AppShell({ greenhouseId }) {
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [activeView, setActiveView] = useState('sensors');
   const [manualZoneId, setManualZoneId] = useState('');
   const time = useClock();
@@ -38,6 +35,12 @@ export default function AppShell({ greenhouseId }) {
   const assignedZones = useMemo(
     () => registry.assigned_zones ?? [],
     [registry.assigned_zones],
+  );
+
+  // Build zone_id → zone_name map for alert enrichment
+  const zoneNameMap = useMemo(
+    () => Object.fromEntries(assignedZones.map(z => [z.zone_id, z.zone_name])),
+    [assignedZones],
   );
 
   // If manual pick exists in current zone list use it; otherwise first zone (or '' for all)
@@ -94,16 +97,6 @@ export default function AppShell({ greenhouseId }) {
               </a>
             )}
             <GlobalFeedStatus readings={readings} />
-            <button
-              onClick={() => setDrawerOpen(true)}
-              className="relative lg:hidden text-muted hover:text-ink transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
-              aria-label="Open alerts"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-              <AlertBadge count={unackedCritical} />
-            </button>
           </div>
         </div>
 
@@ -146,9 +139,6 @@ export default function AppShell({ greenhouseId }) {
 
       {/* ── Body ───────────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden">
-        {activeView !== 'notifications' && (
-          <DesktopSidebar alerts={alerts} onAcknowledge={acknowledge} onDismiss={dismiss} />
-        )}
         <main className="flex-1 overflow-y-auto pb-16 lg:pb-0">
           <AnimatePresence mode="wait">
             {activeView === 'sensors' && (
@@ -175,7 +165,7 @@ export default function AppShell({ greenhouseId }) {
             )}
             {activeView === 'notifications' && (
               <motion.div key="notifications" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.18 }} className="h-full">
-                <AlertPanel alerts={alerts} onAcknowledge={acknowledge} onDismiss={dismiss} />
+                <AlertPanel alerts={alerts} onAcknowledge={acknowledge} onDismiss={dismiss} zoneNameMap={zoneNameMap} />
               </motion.div>
             )}
           </AnimatePresence>
@@ -189,22 +179,6 @@ export default function AppShell({ greenhouseId }) {
         onSetView={setActiveView}
       />
 
-      {/* Mobile drawer — only for non-notifications views */}
-      <AnimatePresence>
-        {drawerOpen && activeView !== 'notifications' && (
-          <>
-            <motion.div key="backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }} className="fixed inset-0 z-40 bg-ink/30 lg:hidden" onClick={() => setDrawerOpen(false)} />
-            <motion.div key="drawer" initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 28, stiffness: 260 }} className="fixed bottom-0 left-0 right-0 z-50 bg-surface border-t-2 border-border lg:hidden" style={{ maxHeight: '80vh' }}>
-              <div className="flex justify-center pt-3 pb-1">
-                <span className="w-10 h-0.5 bg-border rounded-full" />
-              </div>
-              <div style={{ height: 'calc(80vh - 24px)' }}>
-                <AlertPanel alerts={alerts} onAcknowledge={acknowledge} onDismiss={dismiss} onClose={() => setDrawerOpen(false)} />
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
