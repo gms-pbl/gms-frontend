@@ -90,6 +90,9 @@ By default, Vite proxies `/api/*` to `http://127.0.0.1:8081/*`.
 - `POST /v1/g/{greenhouse_id}/zones/command`
 - `GET /v1/g/{greenhouse_id}/zones/command-ack?command_id=...`
 - `GET /v1/dashboard/live?greenhouse_id=...&zone_id=...`
+- `GET /v1/g/{greenhouse_id}/zones/{zone_id}/thresholds`
+- `PUT /v1/g/{greenhouse_id}/zones/{zone_id}/thresholds`
+- `GET /v1/g/{greenhouse_id}/zones/{zone_id}/thresholds/status`
 
 Note: auth session is cookie-based, so requests use `credentials: "include"`.
 
