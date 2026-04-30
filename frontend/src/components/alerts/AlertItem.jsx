@@ -26,6 +26,18 @@ const SEV = {
       </svg>
     ),
   },
+  INFO: {
+    bandColor: 'var(--color-accent)',
+    badge: 'bg-accent/10 text-accent border-accent/30',
+    msg: 'text-accent',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="11" x2="12" y2="16" />
+        <circle cx="12" cy="8" r="0.5" fill="currentColor" />
+      </svg>
+    ),
+  },
 };
 
 function formatTime(iso) {
@@ -33,9 +45,12 @@ function formatTime(iso) {
   catch { return ''; }
 }
 
-export default function AlertItem({ alert, onAcknowledge, onDismiss }) {
+export default function AlertItem({ alert, onAcknowledge, onDismiss, zoneNameMap }) {
   const cfg = SEV[alert.severity] ?? SEV.WARNING;
   const isCritical = alert.severity === 'CRITICAL';
+  const sensorKey = alert.sensor_key || 'unknown_sensor';
+  const zoneName = zoneNameMap?.[alert.zone_id];
+  const context = [zoneName, alert.zone_id, alert.device_id].filter(Boolean).join(' / ');
 
   return (
     <motion.div
@@ -67,7 +82,7 @@ export default function AlertItem({ alert, onAcknowledge, onDismiss }) {
             {alert.severity}
           </span>
           <span className="text-[9px] text-muted truncate" style={{ fontFamily: "'Source Code Pro', monospace" }}>
-            {alert.sensor_key.replace(/_/g, '.')}
+            {sensorKey.replace(/_/g, '.')}
           </span>
           <span className="text-[9px] text-muted/60 ml-auto shrink-0" style={{ fontFamily: "'Source Code Pro', monospace" }}>
             {formatTime(alert.triggered_at)}
@@ -77,6 +92,16 @@ export default function AlertItem({ alert, onAcknowledge, onDismiss }) {
         <p className={`text-[12px] leading-snug ${cfg.msg}`} style={{ fontFamily: "'Zilla Slab', Georgia, serif" }}>
           {alert.message}
         </p>
+
+        {(context || alert.threshold_version || alert.current_value != null) && (
+          <p className="mt-1.5 text-[9px] text-muted" style={{ fontFamily: "'Source Code Pro', monospace" }}>
+            {context && <span>{context}</span>}
+            {context && (alert.threshold_version || alert.current_value != null) && <span> · </span>}
+            {alert.threshold_version && <span>threshold v{alert.threshold_version}</span>}
+            {alert.threshold_version && alert.current_value != null && <span> · </span>}
+            {alert.current_value != null && <span>value {Number(alert.current_value).toFixed(2)}</span>}
+          </p>
+        )}
 
         <div className="flex gap-1.5 mt-2.5">
           {!alert.acknowledged ? (
@@ -105,12 +130,17 @@ export default function AlertItem({ alert, onAcknowledge, onDismiss }) {
 AlertItem.propTypes = {
   alert: PropTypes.shape({
     id:           PropTypes.string.isRequired,
-    severity:     PropTypes.oneOf(['CRITICAL', 'WARNING']).isRequired,
-    sensor_key:   PropTypes.string.isRequired,
+    severity:     PropTypes.oneOf(['CRITICAL', 'WARNING', 'INFO']).isRequired,
+    sensor_key:   PropTypes.string,
+    zone_id:      PropTypes.string,
+    device_id:    PropTypes.string,
+    threshold_version: PropTypes.number,
+    current_value: PropTypes.number,
     message:      PropTypes.string.isRequired,
     triggered_at: PropTypes.string.isRequired,
     acknowledged: PropTypes.bool.isRequired,
   }).isRequired,
   onAcknowledge: PropTypes.func.isRequired,
   onDismiss:     PropTypes.func.isRequired,
+  zoneNameMap:   PropTypes.object,
 };
