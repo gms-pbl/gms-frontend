@@ -3,16 +3,15 @@ import PropTypes from 'prop-types';
 import { useZoneRegistry } from '../../hooks/useZoneRegistry';
 import ZoneDeviceModal from './ZoneDeviceModal';
 import ZoneThresholdModal from './ZoneThresholdModal';
-import { useTheme } from '../../hooks/useTheme';
 
-const mono = { fontFamily: "'Source Code Pro', monospace" };
+const mono  = { fontFamily: "'Source Code Pro', monospace" };
 const serif = { fontFamily: "'Playfair Display', Georgia, serif" };
 
 const OFFLINE_AFTER_MS = 60_000;
 const AVAILABILITY_FILTERS = [
-  { value: 'LIVE', label: 'Live' },
+  { value: 'LIVE',    label: 'Live'    },
   { value: 'OFFLINE', label: 'Offline' },
-  { value: 'ALL', label: 'All' },
+  { value: 'ALL',     label: 'All'     },
 ];
 
 function isDeviceLive(lastSeenAt) {
@@ -33,11 +32,11 @@ function matchesAvailability(device, filter) {
 
 function emptyListMessage(filter, section) {
   if (section === 'discovered') {
-    if (filter === 'LIVE') return 'No live discovered devices right now.';
+    if (filter === 'LIVE')    return 'No live discovered devices right now.';
     if (filter === 'OFFLINE') return 'No offline discovered devices right now.';
     return 'No discovered devices right now.';
   }
-  if (filter === 'LIVE') return 'No live assigned zones right now.';
+  if (filter === 'LIVE')    return 'No live assigned zones right now.';
   if (filter === 'OFFLINE') return 'No offline assigned zones right now.';
   return 'No assigned zones yet.';
 }
@@ -50,15 +49,14 @@ function formatTimestamp(value) {
 }
 
 export default function ZoneManagementPage({ greenhouseId }) {
-  const { isDark, toggleTheme } = useTheme();
   const { registry, loading, pending, error, refresh, assign, unassign, rename, sync } =
     useZoneRegistry({ greenhouseId });
 
-  const [assignDrafts, setAssignDrafts] = useState({});
-  const [renameDrafts, setRenameDrafts] = useState({});
-  const [message, setMessage] = useState('');
-  const [selectedDevice, setSelectedDevice] = useState(null);
-  const [thresholdsZone, setThresholdsZone] = useState(null);
+  const [assignDrafts,     setAssignDrafts]     = useState({});
+  const [renameDrafts,     setRenameDrafts]     = useState({});
+  const [message,          setMessage]          = useState('');
+  const [selectedDevice,   setSelectedDevice]   = useState(null);
+  const [thresholdsZone,   setThresholdsZone]   = useState(null);
   const [availabilityFilter, setAvailabilityFilter] = useState('LIVE');
 
   const discoveredDevices = useMemo(
@@ -70,27 +68,27 @@ export default function ZoneManagementPage({ greenhouseId }) {
     [registry]
   );
   const filteredDiscovered = useMemo(
-    () => discoveredDevices.filter((d) => matchesAvailability(d, availabilityFilter)),
+    () => discoveredDevices.filter(d => matchesAvailability(d, availabilityFilter)),
     [availabilityFilter, discoveredDevices]
   );
   const filteredAssigned = useMemo(
-    () => assignedZones.filter((z) => matchesAvailability(z, availabilityFilter)),
+    () => assignedZones.filter(z => matchesAvailability(z, availabilityFilter)),
     [assignedZones, availabilityFilter]
   );
 
   const handleAssign = async (deviceId) => {
     const draftName = (assignDrafts[deviceId] ?? '').trim();
     await assign({ deviceId, zoneName: draftName || undefined });
-    setAssignDrafts((prev) => ({ ...prev, [deviceId]: '' }));
+    setAssignDrafts(prev => ({ ...prev, [deviceId]: '' }));
     setMessage(`Assigned device ${deviceId} to a zone.`);
   };
 
   const handleRename = async (deviceId, zoneId, currentZoneName) => {
-    const draftName = (renameDrafts[deviceId] ?? '').trim();
+    const draftName  = (renameDrafts[deviceId] ?? '').trim();
     const nextZoneName = draftName || currentZoneName;
     if (!nextZoneName) return;
     await rename({ deviceId, zoneId, zoneName: nextZoneName });
-    setRenameDrafts((prev) => ({ ...prev, [deviceId]: '' }));
+    setRenameDrafts(prev => ({ ...prev, [deviceId]: '' }));
     setMessage(`Updated zone name for device ${deviceId}.`);
   };
 
@@ -104,38 +102,46 @@ export default function ZoneManagementPage({ greenhouseId }) {
     setMessage('Published full zone registry sync to gateway.');
   };
 
-  const openDeviceModal = (device) => { setSelectedDevice(device); setMessage(''); };
-  const closeDeviceModal = () => { setSelectedDevice(null); };
+  const openDeviceModal  = (device) => { setSelectedDevice(device); setMessage(''); };
+  const closeDeviceModal = () => setSelectedDevice(null);
+
+  const statusPill = (isLive) =>
+    isLive
+      ? 'bg-accent/10 text-accent border-accent/25'
+      : 'bg-warn/10  text-warn  border-warn/25';
 
   return (
     <div className="min-h-screen bg-bg">
 
-      {/* ── Page header ──────────────────────────── */}
-      <header className="border-b border-border bg-surface">
-        <div className="flex items-center justify-between px-5 sm:px-8 h-16">
-          <div className="flex flex-col justify-center">
-            <span className="text-ink leading-tight" style={{ ...serif, fontSize: 'clamp(1.05rem, 2.5vw, 1.25rem)' }}>
-              Greenhouse Management System
-            </span>
-            <span className="text-muted text-[10px] tracking-[0.16em] uppercase mt-0.5" style={mono}>
-              greenhouse / {registry?.greenhouse_id ?? greenhouseId ?? 'n/a'}
-            </span>
-          </div>
+      {/* ── Top bar ──────────────────────────────────────────────── */}
+      <header className="sticky top-0 z-10 bg-surface border-b border-border">
+        <div className="flex items-center justify-between px-5 sm:px-8 h-16 max-w-7xl mx-auto">
 
-          <div className="flex items-center gap-2">
+          <div className="min-w-0">
             <a
               href="/g"
-              className="hidden sm:inline-flex min-h-[38px] items-center border border-border px-3 text-[10px] uppercase tracking-[0.14em] text-ink hover:bg-surface2 transition-colors"
-              style={mono}
+              style={serif}
+              className="text-base sm:text-lg text-ink hover:text-accent transition-colors leading-tight block truncate"
             >
-              Greenhouses
+              Greenhouse Management System
+            </a>
+            <p className="text-xs text-muted leading-none mt-0.5 truncate" style={mono}>
+              greenhouse / {registry?.greenhouse_id ?? greenhouseId ?? 'n/a'}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 ml-4">
+            <a
+              href="/g"
+              className="hidden sm:flex items-center gap-1 rounded-full border border-border px-4 h-8 text-sm text-muted hover:text-ink transition-colors"
+            >
+              ← Greenhouses
             </a>
             <button
               type="button"
               onClick={() => void refresh()}
               disabled={pending}
-              className="min-h-[38px] border border-border px-3 text-[10px] uppercase tracking-[0.14em] text-ink hover:bg-surface2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              style={mono}
+              className="rounded-full border border-border px-4 h-8 text-sm text-muted hover:text-ink transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Refresh
             </button>
@@ -143,66 +149,41 @@ export default function ZoneManagementPage({ greenhouseId }) {
               type="button"
               onClick={() => void handleSync()}
               disabled={pending}
-              className="min-h-[38px] border border-accent/40 bg-accent/10 px-3 text-[10px] uppercase tracking-[0.14em] text-accent hover:bg-accent/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              style={mono}
+              className="rounded-full bg-ink text-surface px-4 h-8 text-sm font-semibold hover:bg-soil transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Sync
-            </button>
-            <button
-              onClick={toggleTheme}
-              className="text-muted hover:text-ink transition-colors flex items-center justify-center w-9 h-9 border border-border shrink-0"
-              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-            >
-              {isDark ? (
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
-                  <circle cx="12" cy="12" r="5" />
-                  <line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />
-                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-                  <line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" />
-                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
-                </svg>
-              )}
             </button>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 p-5 sm:p-7">
+      <div className="mx-auto max-w-7xl px-5 sm:px-7 py-6 flex flex-col gap-5">
 
         {/* Feedback banners */}
         {error && (
-          <p className="border border-crit/30 bg-crit/10 px-3 py-2 text-[10px] tracking-wide text-crit" style={mono}>
+          <div className="rounded-xl bg-crit/10 border border-crit/25 px-4 py-3 text-sm text-crit">
             {error}
-          </p>
+          </div>
         )}
         {!error && message && (
-          <p className="border border-accent/30 bg-accent/10 px-3 py-2 text-[10px] tracking-wide text-ink" style={mono}>
+          <div className="rounded-xl bg-accent/10 border border-accent/25 px-4 py-3 text-sm text-ink">
             {message}
-          </p>
+          </div>
         )}
 
-        {/* ── Availability filter ─────────────────── */}
-        <div className="flex flex-wrap items-center gap-2 border border-border bg-surface px-3 py-2.5">
-          <span className="text-[10px] tracking-widest uppercase text-muted mr-1" style={mono}>
-            Filter
-          </span>
-          {AVAILABILITY_FILTERS.map((opt) => {
+        {/* ── Availability filter ───────────────────────────────── */}
+        <div className="flex flex-wrap items-center gap-2 bg-surface rounded-2xl px-5 py-3">
+          <span className="text-sm text-muted mr-1">Filter</span>
+          {AVAILABILITY_FILTERS.map(opt => {
             const active = availabilityFilter === opt.value;
             return (
               <button
                 key={opt.value}
                 type="button"
                 onClick={() => setAvailabilityFilter(opt.value)}
-                className={`min-h-[28px] px-3 text-[9px] uppercase tracking-widest border transition-colors ${
-                  active
-                    ? 'border-accent/40 bg-accent/10 text-accent'
-                    : 'border-border text-muted hover:text-ink hover:border-border/80'
+                className={`px-4 h-7 rounded-full text-xs font-semibold transition-colors ${
+                  active ? 'bg-ink text-surface' : 'text-muted hover:text-ink'
                 }`}
-                style={mono}
               >
                 {opt.label}
               </button>
@@ -210,196 +191,155 @@ export default function ZoneManagementPage({ greenhouseId }) {
           })}
         </div>
 
-        {/* ── Two-column grid ─────────────────────── */}
+        {/* ── Two-column layout ─────────────────────────────────── */}
         <div className="grid gap-5 lg:grid-cols-2">
 
           {/* Discovered Devices */}
-          <section className="border border-border bg-surface">
-            <div className="border-b border-border px-4 py-3">
+          <section className="bg-surface rounded-2xl overflow-hidden flex flex-col">
+            <div className="px-5 py-4 border-b border-border/50">
               <h2 className="text-xl text-ink leading-none" style={serif}>Discovered Devices</h2>
-              <p className="text-[10px] tracking-widest uppercase text-muted mt-1" style={mono}>
-                Unassigned devices announcing to this gateway
-              </p>
+              <p className="text-xs text-muted mt-1">Unassigned devices announcing to this gateway</p>
             </div>
 
-            <div className="flex flex-col">
+            <div className="p-4 flex flex-col gap-3 flex-1">
               {loading ? (
-                <p className="px-4 py-6 text-[10px] tracking-widest uppercase text-muted" style={mono}>
-                  Loading…
-                </p>
+                <p className="text-sm text-muted py-8 text-center">Loading…</p>
               ) : filteredDiscovered.length === 0 ? (
-                <p className="px-4 py-6 text-[10px] tracking-widest uppercase text-muted" style={mono}>
-                  {emptyListMessage(availabilityFilter, 'discovered')}
-                </p>
+                <p className="text-sm text-muted py-8 text-center">{emptyListMessage(availabilityFilter, 'discovered')}</p>
               ) : (
-                filteredDiscovered.map((device) => (
-                  <article
+                filteredDiscovered.map(device => (
+                  <div
                     key={device.device_id}
                     onClick={() => openDeviceModal(device)}
-                    className={`border-b border-border/50 last:border-b-0 px-4 py-3 cursor-pointer transition-colors ${
-                      device.is_live ? 'hover:bg-surface2/40' : 'bg-warn/5 hover:bg-warn/10'
-                    }`}
-                    style={{ borderLeftWidth: '3px', borderLeftColor: device.is_live ? 'var(--color-accent)' : 'var(--color-warn)' }}
+                    className="bg-surface2 rounded-xl p-4 cursor-pointer hover:shadow-sm transition-shadow"
                   >
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <div>
-                        <p className="text-sm text-ink leading-snug truncate" style={mono}>
+                    {/* Card header */}
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="min-w-0">
+                        <p className="text-sm text-ink font-medium truncate" style={mono}>
                           {device.device_id}
                         </p>
-                        <p className="text-[10px] text-muted mt-0.5" style={mono}>
+                        <p className="text-xs text-muted mt-0.5" style={mono}>
                           fw / {device.firmware_version || 'unknown'}
                         </p>
-                        <p className="text-[10px] text-muted" style={mono}>
+                        <p className="text-xs text-muted" style={mono}>
                           seen / {formatTimestamp(device.last_seen_at)}
                         </p>
-                        {!device.is_live && (
-                          <p className="text-[10px] text-warn mt-1" style={mono}>
-                            Offline — wait for heartbeat before assigning
-                          </p>
-                        )}
                       </div>
-                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                        <span
-                          className={`text-[9px] tracking-widest uppercase px-1.5 py-0.5 border ${
-                            device.is_live
-                              ? 'border-accent/30 bg-accent/10 text-accent'
-                              : 'border-warn/40 bg-warn/10 text-warn'
-                          }`}
-                          style={mono}
-                        >
-                          {device.availability}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => openDeviceModal(device)}
-                          disabled={!device.is_live}
-                          className="min-h-[30px] border border-border px-2 text-[9px] uppercase tracking-widest text-ink hover:bg-surface2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                          style={mono}
-                        >
-                          Control
-                        </button>
-                      </div>
+                      <span className={`shrink-0 text-xs font-medium px-2.5 py-0.5 rounded-full border ${statusPill(device.is_live)}`}>
+                        {device.is_live ? 'Live' : 'Offline'}
+                      </span>
                     </div>
 
-                    <div className="mt-2 flex flex-wrap items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                    {!device.is_live && (
+                      <p className="text-xs text-warn mb-3">
+                        Wait for a heartbeat before assigning
+                      </p>
+                    )}
+
+                    {/* Assign row */}
+                    <div className="flex gap-2" onClick={e => e.stopPropagation()}>
                       <input
                         type="text"
                         value={assignDrafts[device.device_id] ?? ''}
-                        onChange={(e) => setAssignDrafts((p) => ({ ...p, [device.device_id]: e.target.value }))}
+                        onChange={e => setAssignDrafts(p => ({ ...p, [device.device_id]: e.target.value }))}
                         placeholder="Zone name (optional)"
-                        className="min-h-[36px] flex-1 border border-border bg-bg px-3 text-sm text-ink outline-none focus:border-accent transition-colors"
-                        style={mono}
+                        className="flex-1 rounded-xl border border-border bg-surface px-3 h-9 text-sm text-ink outline-none focus:border-accent transition-colors"
                       />
                       <button
                         type="button"
                         onClick={() => void handleAssign(device.device_id)}
                         disabled={pending || !device.is_live}
-                        className="min-h-[36px] border border-accent/40 bg-accent/10 px-3 text-[9px] uppercase tracking-widest text-accent hover:bg-accent/20 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                        style={mono}
+                        className="rounded-xl bg-soil text-surface px-4 h-9 text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         Assign
                       </button>
                     </div>
-                  </article>
+                  </div>
                 ))
               )}
             </div>
           </section>
 
           {/* Assigned Zones */}
-          <section className="border border-border bg-surface">
-            <div className="border-b border-border px-4 py-3">
+          <section className="bg-surface rounded-2xl overflow-hidden flex flex-col">
+            <div className="px-5 py-4 border-b border-border/50">
               <h2 className="text-xl text-ink leading-none" style={serif}>Assigned Zones</h2>
-              <p className="text-[10px] tracking-widest uppercase text-muted mt-1" style={mono}>
-                Active mappings for command routing and telemetry
-              </p>
+              <p className="text-xs text-muted mt-1">Active mappings for command routing and telemetry</p>
             </div>
 
-            <div className="flex flex-col">
+            <div className="p-4 flex flex-col gap-3 flex-1">
               {loading ? (
-                <p className="px-4 py-6 text-[10px] tracking-widest uppercase text-muted" style={mono}>
-                  Loading…
-                </p>
+                <p className="text-sm text-muted py-8 text-center">Loading…</p>
               ) : filteredAssigned.length === 0 ? (
-                <p className="px-4 py-6 text-[10px] tracking-widest uppercase text-muted" style={mono}>
-                  {emptyListMessage(availabilityFilter, 'assigned')}
-                </p>
+                <p className="text-sm text-muted py-8 text-center">{emptyListMessage(availabilityFilter, 'assigned')}</p>
               ) : (
-                filteredAssigned.map((zone) => (
-                  <article
+                filteredAssigned.map(zone => (
+                  <div
                     key={zone.device_id}
                     onClick={() => openDeviceModal(zone)}
-                    className={`border-b border-border/50 last:border-b-0 px-4 py-3 cursor-pointer transition-colors ${
-                      zone.is_live ? 'hover:bg-surface2/40' : 'bg-warn/5 hover:bg-warn/10'
-                    }`}
-                    style={{ borderLeftWidth: '3px', borderLeftColor: zone.is_live ? 'var(--color-accent)' : 'var(--color-warn)' }}
+                    className="bg-surface2 rounded-xl p-4 cursor-pointer hover:shadow-sm transition-shadow"
                   >
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <div>
-                        <p className="text-sm text-ink leading-snug" style={serif}>
+                    {/* Card header */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-base text-ink font-semibold leading-snug" style={serif}>
                           {zone.zone_name || 'Unnamed zone'}
                         </p>
-                        <p className="text-[10px] text-muted truncate mt-0.5" style={mono}>
+                        <p className="text-xs text-muted mt-0.5 truncate" style={mono}>
                           zone / {zone.zone_id}
                         </p>
-                        <p className="text-[10px] text-muted truncate" style={mono}>
+                        <p className="text-xs text-muted truncate" style={mono}>
                           device / {zone.device_id}
                         </p>
-                        <p className="text-[10px] text-muted" style={mono}>
+                        <p className="text-xs text-muted" style={mono}>
                           seen / {formatTimestamp(zone.last_seen_at)}
                         </p>
-                        {!zone.is_live && (
-                          <p className="text-[10px] text-warn mt-1" style={mono}>
-                            Offline — command control disabled
-                          </p>
-                        )}
                       </div>
-                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                        <span
-                          className={`text-[9px] tracking-widest uppercase px-1.5 py-0.5 border ${
-                            zone.is_live
-                              ? 'border-accent/30 bg-accent/10 text-accent'
-                              : 'border-warn/40 bg-warn/10 text-warn'
-                          }`}
-                          style={mono}
-                        >
-                          {zone.availability}
+
+                      <div className="flex flex-col items-end gap-2 shrink-0">
+                        <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full border ${statusPill(zone.is_live)}`}>
+                          {zone.is_live ? 'Live' : 'Offline'}
                         </span>
-                        <button
-                          type="button"
-                          onClick={() => openDeviceModal(zone)}
-                          disabled={!zone.is_live}
-                          className="min-h-[30px] border border-border px-2 text-[9px] uppercase tracking-widest text-ink hover:bg-surface2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                          style={mono}
-                        >
-                          Control
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setThresholdsZone(zone)}
-                          className="min-h-[30px] border border-border px-2 text-[9px] uppercase tracking-widest text-ink hover:bg-surface2 transition-colors"
-                          style={mono}
-                        >
-                          Thresholds
-                        </button>
+                        {/* Control / Thresholds */}
+                        <div className="flex gap-1.5" onClick={e => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            onClick={() => openDeviceModal(zone)}
+                            disabled={!zone.is_live}
+                            className="rounded-full border border-border px-3 h-7 text-xs text-muted hover:text-ink hover:bg-surface/70 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            Control
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setThresholdsZone(zone)}
+                            className="rounded-full border border-border px-3 h-7 text-xs text-muted hover:text-ink hover:bg-surface/70 transition-colors"
+                          >
+                            Thresholds
+                          </button>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="mt-2 flex flex-wrap items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                    {!zone.is_live && (
+                      <p className="text-xs text-warn mt-2">Offline — command control disabled</p>
+                    )}
+
+                    {/* Rename / Unassign row */}
+                    <div className="mt-3 flex gap-2" onClick={e => e.stopPropagation()}>
                       <input
                         type="text"
                         value={renameDrafts[zone.device_id] ?? ''}
-                        onChange={(e) => setRenameDrafts((p) => ({ ...p, [zone.device_id]: e.target.value }))}
+                        onChange={e => setRenameDrafts(p => ({ ...p, [zone.device_id]: e.target.value }))}
                         placeholder="Rename zone"
-                        className="min-h-[36px] flex-1 border border-border bg-bg px-3 text-sm text-ink outline-none focus:border-accent transition-colors"
-                        style={mono}
+                        className="flex-1 rounded-xl border border-border bg-surface px-3 h-9 text-sm text-ink outline-none focus:border-accent transition-colors"
                       />
                       <button
                         type="button"
                         onClick={() => void handleRename(zone.device_id, zone.zone_id, zone.zone_name)}
                         disabled={pending}
-                        className="min-h-[36px] border border-border px-3 text-[9px] uppercase tracking-widest text-ink hover:bg-surface2 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                        style={mono}
+                        className="rounded-xl border border-border px-3 h-9 text-sm text-muted hover:text-ink hover:bg-surface/70 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         Rename
                       </button>
@@ -407,13 +347,12 @@ export default function ZoneManagementPage({ greenhouseId }) {
                         type="button"
                         onClick={() => void handleUnassign(zone.device_id)}
                         disabled={pending}
-                        className="min-h-[36px] border border-crit/40 bg-crit/10 px-3 text-[9px] uppercase tracking-widest text-crit hover:bg-crit/20 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                        style={mono}
+                        className="rounded-xl border border-crit/40 bg-crit/10 px-3 h-9 text-sm text-crit hover:bg-crit/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         Unassign
                       </button>
                     </div>
-                  </article>
+                  </div>
                 ))
               )}
             </div>
