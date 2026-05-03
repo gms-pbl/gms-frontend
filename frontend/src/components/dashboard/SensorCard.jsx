@@ -1,9 +1,7 @@
 import PropTypes from 'prop-types';
-import { motion } from 'motion/react';
 import FreshnessIndicator from './FreshnessIndicator';
 import { useDataFreshness } from '../../hooks/useDataFreshness';
 
-// Keys match the backend's canonical sensor_key values
 const SENSOR_LABELS = {
   air_temp:     'Air Temperature',
   air_hum:      'Relative Humidity',
@@ -19,12 +17,12 @@ const SENSOR_LABELS = {
 };
 
 const STATUS_CFG = {
-  OK: { border: 'var(--color-accent)', pill: 'bg-accent/10 text-accent border-accent/30', dot: 'bg-accent', label: 'OK' },
-  INFO: { border: 'var(--color-accent)', pill: 'bg-accent/10 text-accent border-accent/30', dot: 'bg-accent', label: 'OK' },
-  WARNING: { border: 'var(--color-warn)', pill: 'bg-warn/10 text-warn border-warn/30', dot: 'bg-warn', label: 'WARNING' },
-  WARN: { border: 'var(--color-warn)', pill: 'bg-warn/10 text-warn border-warn/30', dot: 'bg-warn', label: 'WARNING' },
-  CRITICAL: { border: 'var(--color-crit)', pill: 'bg-crit/10 text-crit border-crit/30', dot: 'bg-crit', label: 'CRITICAL' },
-  ERR: { border: 'var(--color-crit)', pill: 'bg-crit/10 text-crit border-crit/30', dot: 'bg-crit', label: 'CRITICAL' },
+  OK:       { pill: 'bg-accent/15 text-accent border-accent/25',  label: 'OK'       },
+  INFO:     { pill: 'bg-accent/15 text-accent border-accent/25',  label: 'OK'       },
+  WARNING:  { pill: 'bg-warn/15 text-warn border-warn/25',        label: 'Warning'  },
+  WARN:     { pill: 'bg-warn/15 text-warn border-warn/25',        label: 'Warning'  },
+  CRITICAL: { pill: 'bg-crit/15 text-crit border-crit/25',       label: 'Critical' },
+  ERR:      { pill: 'bg-crit/15 text-crit border-crit/25',       label: 'Critical' },
 };
 
 function formatValue(val) {
@@ -37,16 +35,19 @@ function formatValue(val) {
 export default function SensorCard({ reading, index, onClick }) {
   const { isStale } = useDataFreshness(reading.lastUpdatedAt);
   const label = SENSOR_LABELS[reading.sensor_key] ?? reading.sensor_key;
-  const cfg = STATUS_CFG[reading.status] ?? STATUS_CFG.OK;
+  const cfg   = STATUS_CFG[reading.status] ?? STATUS_CFG.OK;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: isStale ? 0.5 : 1, y: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.06 }}
+    <div
       onClick={onClick}
-      className={`relative flex flex-col bg-surface border border-border overflow-hidden ${onClick ? 'cursor-pointer hover:border-accent/50 transition-colors' : ''}`}
-      style={{ borderLeftColor: cfg.border, borderLeftWidth: '3px' }}
+      style={{ animationDelay: `${index * 60}ms` }}
+      className={[
+        'relative flex flex-col bg-surface2 rounded-2xl overflow-hidden',
+        'animate-[fadeUp_0.35s_ease_both]',
+        isStale ? 'opacity-55' : 'opacity-100',
+        'transition-opacity duration-500',
+        onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : '',
+      ].join(' ')}
     >
       {/* Value + label */}
       <div className="flex-1 px-5 pt-5 pb-4">
@@ -57,32 +58,27 @@ export default function SensorCard({ reading, index, onClick }) {
           >
             {formatValue(reading.value)}
           </span>
-          <span className="text-muted text-xs leading-none mb-0.5" style={{ fontFamily: "'Source Code Pro', monospace" }}>
+          <span
+            className="text-muted text-xs leading-none mb-0.5"
+            style={{ fontFamily: "'Source Code Pro', monospace" }}
+          >
             {reading.unit}
           </span>
         </div>
 
-        <span
-          className="block text-ink/75 text-sm mt-2.5 leading-snug"
-          style={{ fontFamily: "'Zilla Slab', Georgia, serif" }}
-        >
+        <span className="block text-ink/70 text-sm mt-2.5 leading-snug font-medium">
           {label}
         </span>
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between px-5 py-2.5 border-t border-border/60 bg-surface2">
+      <div className="flex items-center justify-between px-5 py-2.5 border-t border-border/40">
         <FreshnessIndicator timestamp={reading.lastUpdatedAt} />
-        <span
-          className={`text-[9px] tracking-widest uppercase px-2 py-0.5 border rounded-sm ${cfg.pill}`}
-          style={{ fontFamily: "'Source Code Pro', monospace" }}
-        >
+        <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full border ${cfg.pill}`}>
           {cfg.label}
         </span>
       </div>
-
-      {isStale && <div className="absolute inset-0 pointer-events-none border border-warn/30" />}
-    </motion.div>
+    </div>
   );
 }
 
@@ -98,6 +94,4 @@ SensorCard.propTypes = {
   onClick: PropTypes.func,
 };
 
-SensorCard.defaultProps = {
-  onClick: null,
-};
+SensorCard.defaultProps = { onClick: null };

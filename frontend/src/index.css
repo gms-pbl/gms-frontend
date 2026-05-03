@@ -13,32 +13,18 @@
   --color-muted:    var(--theme-muted);
 }
 
-/* ── Light theme (botanical) ─────────────────── */
+/* ── Botanical light theme ───────────────────────────────────────────────── */
 :root {
-  --theme-bg:       #f2ede2;
-  --theme-surface:  #faf7f0;
-  --theme-surface2: #ede7d8;
-  --theme-border:   #cfc5ac;
-  --theme-accent:   #4a7c2f;
-  --theme-soil:     #8b5e2a;
+  --theme-bg:       #DFDDD1;   /* Timberwolf  — page background              */
+  --theme-surface:  #f5f3eb;   /* warm white  — modals, login card, inputs   */
+  --theme-surface2: #e4e8d5;   /* light sage  — list cards                   */
+  --theme-border:   #c4c9b2;   /* muted green border                         */
+  --theme-accent:   #799851;   /* Palm Leaf   — links, tags, focus           */
+  --theme-soil:     #47622A;   /* Dark Moss   — primary buttons              */
   --theme-warn:     #a06010;
   --theme-crit:     #b83020;
-  --theme-ink:      #2c3820;
-  --theme-muted:    #7a8a68;
-}
-
-/* ── Dark theme (terminal) ───────────────────── */
-[data-theme="dark"] {
-  --theme-bg:       #07100a;
-  --theme-surface:  #0d1a10;
-  --theme-surface2: #0f1f12;
-  --theme-border:   #1e3824;
-  --theme-accent:   #3ddc64;
-  --theme-soil:     #527a5e;
-  --theme-warn:     #e8a020;
-  --theme-crit:     #e83a3a;
-  --theme-ink:      #c4dbc9;
-  --theme-muted:    #527a5e;
+  --theme-ink:      #374426;   /* Kombu Green — main text                    */
+  --theme-muted:    #7a8c68;   /* muted text                                 */
 }
 
 *,
@@ -51,36 +37,17 @@ html, body, #root {
   padding: 0;
 }
 
-/* ── Light body ──────────────────────────────── */
 body {
-  font-family: 'Zilla Slab', Georgia, serif;
+  font-family: 'Nunito', system-ui, sans-serif;
   background-color: var(--theme-bg);
   color: var(--theme-ink);
-
-  background-image:
-    radial-gradient(ellipse at 50% 0%,   rgba(74, 124, 47,  0.06) 0%, transparent 55%),
-    radial-gradient(ellipse at 0%  100%,  rgba(139, 94, 42,  0.05) 0%, transparent 50%),
-    radial-gradient(ellipse at 100% 50%,  rgba(74, 124, 47,  0.04) 0%, transparent 45%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
-  background-size: 100% 100%, 100% 100%, 100% 100%, 300px 300px;
-  background-attachment: fixed;
 }
 
-/* ── Dark body (scan-line texture) ──────────── */
-[data-theme="dark"] body {
-  background-image:
-    repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(0, 0, 0, 0.18) 2px,
-      rgba(0, 0, 0, 0.18) 4px
-    );
-  background-size: 100% 4px;
-  background-attachment: fixed;
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0);     }
 }
 
-/* ── Scrollbar ───────────────────────────────── */
 ::-webkit-scrollbar        { width: 5px; }
 ::-webkit-scrollbar-track  { background: var(--theme-surface2); }
 ::-webkit-scrollbar-thumb  { background: var(--theme-border); border-radius: 2px; }

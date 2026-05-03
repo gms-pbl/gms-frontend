@@ -16,9 +16,9 @@ function computeStatus(readings) {
 }
 
 const CFG = {
-  LIVE:     { label: 'Live',     dot: '#4a7c2f', text: 'text-accent', border: 'border-accent/40', bg: 'bg-accent/8'  },
-  DEGRADED: { label: 'Degraded', dot: '#a06010', text: 'text-warn',   border: 'border-warn/40',   bg: 'bg-warn/8'    },
-  OFFLINE:  { label: 'Offline',  dot: '#b83020', text: 'text-crit',   border: 'border-crit/40',   bg: 'bg-crit/8'    },
+  LIVE:     { label: 'Live',     dot: 'var(--color-accent)', text: 'text-accent', border: 'border-accent/30', bg: 'bg-accent/10'  },
+  DEGRADED: { label: 'Degraded', dot: 'var(--color-warn)',   text: 'text-warn',   border: 'border-warn/30',   bg: 'bg-warn/10'    },
+  OFFLINE:  { label: 'Offline',  dot: 'var(--color-crit)',   text: 'text-crit',   border: 'border-crit/30',   bg: 'bg-crit/10'    },
 };
 
 export default function GlobalFeedStatus({ readings }) {
@@ -32,10 +32,7 @@ export default function GlobalFeedStatus({ readings }) {
   const cfg = CFG[status];
 
   return (
-    <div
-      className={`flex items-center gap-2 px-3 py-1 border rounded-sm text-[9px] tracking-widest uppercase ${cfg.bg} ${cfg.border} ${cfg.text}`}
-      style={{ fontFamily: "'Source Code Pro', monospace" }}
-    >
+    <div className={`flex items-center gap-2 px-3 py-1.5 border rounded-full text-xs font-medium ${cfg.bg} ${cfg.border} ${cfg.text}`}>
       <motion.span
         className="w-1.5 h-1.5 rounded-full shrink-0"
         style={{ backgroundColor: cfg.dot }}

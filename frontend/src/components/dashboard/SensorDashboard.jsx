@@ -4,6 +4,9 @@ import { AnimatePresence } from 'motion/react';
 import SensorCard from './SensorCard';
 import HistoricalTrendPanel from './HistoricalTrendPanel';
 
+const serif = { fontFamily: "'Playfair Display', Georgia, serif" };
+const mono  = { fontFamily: "'Source Code Pro', monospace" };
+
 const SENSOR_DISPLAY_KEYS = new Set([
   'air_temp', 'air_hum',
   'soil_moist', 'soil_temp', 'soil_cond', 'soil_ph',
@@ -13,110 +16,93 @@ const SENSOR_DISPLAY_KEYS = new Set([
 export default function SensorDashboard({ readings, greenhouseId, zones, selectedZoneId, onSelectZone }) {
   const [selectedKey, setSelectedKey] = useState(null);
 
-  const sensorReadings = readings.filter(r => SENSOR_DISPLAY_KEYS.has(r.sensor_key));
-  const warnCount = sensorReadings.filter(r => r.status === 'WARNING').length;
-  const criticalCount = sensorReadings.filter(r => r.status === 'CRITICAL').length;
+  const sensorReadings  = readings.filter(r => SENSOR_DISPLAY_KEYS.has(r.sensor_key));
+  const warnCount       = sensorReadings.filter(r => r.status === 'WARNING' || r.status === 'WARN').length;
+  const criticalCount   = sensorReadings.filter(r => r.status === 'CRITICAL' || r.status === 'ERR').length;
+  const selectedZone    = zones.find(z => z.zone_id === selectedZoneId) ?? null;
 
-  const selectedZone = zones.find(z => z.zone_id === selectedZoneId) ?? null;
+  const zonePillCls = (zoneId) =>
+    `shrink-0 px-4 h-7 rounded-full text-xs font-semibold transition-colors whitespace-nowrap ${
+      zoneId === selectedZoneId
+        ? 'bg-ink text-surface'
+        : 'text-muted hover:text-ink'
+    }`;
 
   return (
     <div className="flex flex-col h-full">
 
       {/* Zone tab strip */}
       {zones.length > 0 && (
-        <div
-          className="shrink-0 flex items-stretch overflow-x-auto border-b border-border bg-surface scrollbar-none"
-          style={{ minHeight: '36px' }}
-        >
-          {zones.map(z => {
-            const active = z.zone_id === selectedZoneId;
-            return (
-              <button
-                key={z.zone_id}
-                onClick={() => onSelectZone(z.zone_id)}
-                className={`shrink-0 px-5 h-9 text-[9px] tracking-widest uppercase border-b-2 transition-colors whitespace-nowrap ${
-                  active
-                    ? 'text-accent border-accent bg-accent/5'
-                    : 'text-muted border-transparent hover:text-ink hover:bg-surface2'
-                }`}
-                style={{ fontFamily: "'Source Code Pro', monospace" }}
-              >
-                {z.zone_name || z.zone_id}
-              </button>
-            );
-          })}
+        <div className="shrink-0 flex items-center gap-2 px-5 sm:px-7 py-2.5 overflow-x-auto border-b border-border bg-surface">
+          {zones.map(z => (
+            <button
+              key={z.zone_id}
+              onClick={() => onSelectZone(z.zone_id)}
+              className={zonePillCls(z.zone_id)}
+            >
+              {z.zone_name || z.zone_id}
+            </button>
+          ))}
         </div>
       )}
 
       {/* No zones assigned */}
       {zones.length === 0 && greenhouseId && (
-        <div className="shrink-0 flex items-center gap-3 px-5 sm:px-7 py-2.5 border-b border-border bg-surface">
-          <span className="text-muted text-[9px] tracking-widest uppercase" style={{ fontFamily: "'Source Code Pro', monospace" }}>
-            No zones assigned —
-          </span>
+        <div className="shrink-0 flex items-center gap-2 px-5 sm:px-7 py-2.5 border-b border-border bg-surface">
+          <span className="text-sm text-muted">No zones assigned —</span>
           <a
             href={`/g/${encodeURIComponent(greenhouseId)}/zones`}
-            className="text-accent text-[9px] tracking-widest uppercase hover:underline"
-            style={{ fontFamily: "'Source Code Pro', monospace" }}
+            className="text-sm text-accent font-medium hover:text-soil transition-colors"
           >
             Assign devices →
           </a>
         </div>
       )}
 
-      {/* Readings header */}
-      <div className="px-5 sm:px-7 pt-5 pb-4 border-b border-border flex items-end justify-between">
+      {/* Section header */}
+      <div className="px-5 sm:px-7 pt-5 pb-4 flex items-end justify-between">
         <div>
-          <h2
-            className="text-ink text-xl sm:text-2xl leading-none"
-            style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-          >
+          <h2 className="text-ink text-xl sm:text-2xl leading-none" style={serif}>
             Sensor Readings
           </h2>
           {selectedZone && (
-            <p
-              className="text-muted text-[9px] tracking-widest uppercase mt-1"
-              style={{ fontFamily: "'Source Code Pro', monospace" }}
-            >
+            <p className="text-muted text-xs mt-1" style={mono}>
               {selectedZone.zone_name || selectedZone.zone_id}
               {selectedZone.device_id && ` · ${selectedZone.device_id}`}
             </p>
           )}
         </div>
+
         <div className="flex items-center gap-2 mb-0.5">
           {criticalCount > 0 && (
-            <span className="text-[9px] tracking-widest uppercase px-2 py-0.5 bg-crit/10 text-crit border border-crit/30 rounded-sm" style={{ fontFamily: "'Source Code Pro', monospace" }}>
+            <span className="text-xs font-medium px-3 py-1 rounded-full bg-crit/10 text-crit border border-crit/25">
               {criticalCount} critical
             </span>
           )}
           {warnCount > 0 && (
-            <span className="text-[9px] tracking-widest uppercase px-2 py-0.5 bg-warn/10 text-warn border border-warn/30 rounded-sm" style={{ fontFamily: "'Source Code Pro', monospace" }}>
+            <span className="text-xs font-medium px-3 py-1 rounded-full bg-warn/10 text-warn border border-warn/25">
               {warnCount} warning
             </span>
           )}
           {sensorReadings.length > 0 && criticalCount === 0 && warnCount === 0 && (
-            <span className="text-[9px] tracking-widest uppercase px-2 py-0.5 bg-accent/10 text-accent border border-accent/30 rounded-sm" style={{ fontFamily: "'Source Code Pro', monospace" }}>
-              all nominal
+            <span className="text-xs font-medium px-3 py-1 rounded-full bg-accent/10 text-accent border border-accent/25">
+              All nominal
             </span>
           )}
           {greenhouseId && sensorReadings.length > 0 && (
-            <span className="text-[9px] tracking-widest uppercase text-muted ml-1 hidden sm:inline" style={{ fontFamily: "'Source Code Pro', monospace" }}>
-              tap for history
-            </span>
+            <span className="text-xs text-muted hidden sm:inline">tap for history</span>
           )}
         </div>
       </div>
 
       {/* Grid */}
-      <div className="flex-1 p-5 sm:p-7">
+      <div className="flex-1 px-5 sm:px-7 pb-7">
         {sensorReadings.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16">
-            <span className="text-muted text-[10px] tracking-widest uppercase" style={{ fontFamily: "'Source Code Pro', monospace" }}>
-              No sensor data
-            </span>
-            <span className="text-muted text-[9px] mt-2" style={{ fontFamily: "'Source Code Pro', monospace" }}>
+            <p className="text-muted text-sm">No sensor data</p>
+            <p className="text-muted text-xs mt-1">
               {zones.length === 0 ? 'Assign a zone to begin' : 'Waiting for device telemetry…'}
-            </span>
+            </p>
           </div>
         )}
 
@@ -157,10 +143,10 @@ SensorDashboard.propTypes = {
       lastUpdatedAt: PropTypes.string.isRequired,
     })
   ).isRequired,
-  greenhouseId:  PropTypes.string,
-  zones:         PropTypes.array,
-  selectedZoneId:PropTypes.string,
-  onSelectZone:  PropTypes.func,
+  greenhouseId:   PropTypes.string,
+  zones:          PropTypes.array,
+  selectedZoneId: PropTypes.string,
+  onSelectZone:   PropTypes.func,
 };
 
 SensorDashboard.defaultProps = {
