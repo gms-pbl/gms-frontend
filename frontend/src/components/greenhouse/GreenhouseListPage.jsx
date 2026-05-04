@@ -8,6 +8,9 @@ import {
   listGreenhouses,
   updateGreenhouse,
 } from '../../services/greenhouseApi';
+import { useGreenhouseLocations } from '../../hooks/useGreenhouseLocations';
+import GreenhouseMap from './GreenhouseMap';
+import LocationPicker from './LocationPicker';
 
 const serif = { fontFamily: "'Playfair Display', Georgia, serif" };
 const mono  = { fontFamily: "'Source Code Pro', monospace" };
@@ -57,21 +60,24 @@ function GearIcon() {
 
 /* ── Add Greenhouse bottom-sheet modal ──────────────────────────────────── */
 function AddGreenhouseModal({ isOpen, onClose, onSubmit, pending }) {
-  const [name, setName]                   = useState('');
-  const [greenhouseId, setGreenhouseId]   = useState('');
-  const [gatewayId, setGatewayId]         = useState('');
+  const [name,         setName]         = useState('');
+  const [greenhouseId, setGreenhouseId] = useState('');
+  const [gatewayId,    setGatewayId]    = useState('');
+  const [location,     setLocation]     = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim()) return;
     await onSubmit({
-      name: name.trim(),
+      name:         name.trim(),
       greenhouseId: greenhouseId.trim() || undefined,
-      gatewayId:   gatewayId.trim()    || undefined,
+      gatewayId:    gatewayId.trim()    || undefined,
+      location,
     });
     setName('');
     setGreenhouseId('');
     setGatewayId('');
+    setLocation(null);
   };
 
   return (
@@ -88,7 +94,7 @@ function AddGreenhouseModal({ isOpen, onClose, onSubmit, pending }) {
           />
           <motion.div
             key="sheet"
-            className="fixed bottom-0 left-0 right-0 z-50 bg-surface rounded-t-3xl px-6 pt-4 pb-12 sm:max-w-md sm:mx-auto"
+            className="fixed bottom-0 left-0 right-0 z-50 bg-surface rounded-t-3xl px-6 pt-4 pb-10 sm:max-w-md sm:mx-auto overflow-y-auto max-h-[92vh]"
             style={{ boxShadow: '0 -8px 40px rgba(55,68,38,0.15)' }}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
@@ -117,7 +123,8 @@ function AddGreenhouseModal({ isOpen, onClose, onSubmit, pending }) {
 
               <label className="flex flex-col gap-1.5">
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted">
-                  Greenhouse ID <span className="normal-case tracking-normal font-normal text-muted/70">(optional)</span>
+                  Greenhouse ID{' '}
+                  <span className="normal-case tracking-normal font-normal text-muted/70">(optional)</span>
                 </span>
                 <input
                   type="text"
@@ -131,7 +138,8 @@ function AddGreenhouseModal({ isOpen, onClose, onSubmit, pending }) {
 
               <label className="flex flex-col gap-1.5">
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted">
-                  Gateway ID <span className="normal-case tracking-normal font-normal text-muted/70">(optional)</span>
+                  Gateway ID{' '}
+                  <span className="normal-case tracking-normal font-normal text-muted/70">(optional)</span>
                 </span>
                 <input
                   type="text"
@@ -142,6 +150,9 @@ function AddGreenhouseModal({ isOpen, onClose, onSubmit, pending }) {
                   style={mono}
                 />
               </label>
+
+              {/* Location picker */}
+              <LocationPicker value={location} onChange={setLocation} />
 
               <button
                 type="submit"
@@ -284,19 +295,20 @@ GreenhouseCard.propTypes = {
   config:         PropTypes.object,
   onCopyConfig:   PropTypes.func.isRequired,
 };
-
 GreenhouseCard.defaultProps = { config: null };
 
 /* ── Page ───────────────────────────────────────────────────────────────── */
 export default function GreenhouseListPage({ profile, onLogout, onOpenGreenhouse }) {
-  const [items, setItems]                         = useState([]);
-  const [loading, setLoading]                     = useState(true);
-  const [pending, setPending]                     = useState(false);
-  const [error, setError]                         = useState('');
-  const [message, setMessage]                     = useState('');
-  const [modalOpen, setModalOpen]                 = useState(false);
-  const [expandedConfigFor, setExpandedConfigFor] = useState('');
-  const [configByGreenhouse, setConfigByGreenhouse] = useState({});
+  const [items,               setItems]               = useState([]);
+  const [loading,             setLoading]             = useState(true);
+  const [pending,             setPending]             = useState(false);
+  const [error,               setError]               = useState('');
+  const [message,             setMessage]             = useState('');
+  const [modalOpen,           setModalOpen]           = useState(false);
+  const [expandedConfigFor,   setExpandedConfigFor]   = useState('');
+  const [configByGreenhouse,  setConfigByGreenhouse]  = useState({});
+
+  const { locations, setLocation, removeLocation } = useGreenhouseLocations();
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -328,9 +340,13 @@ export default function GreenhouseListPage({ profile, onLogout, onOpenGreenhouse
     }
   }, [refresh]);
 
-  const handleCreate = async ({ name, greenhouseId, gatewayId }) => {
+  const handleCreate = async ({ name, greenhouseId, gatewayId, location }) => {
     await runAction(async () => {
       const created = await createGreenhouse({ name, greenhouseId, gatewayId });
+      const id = created?.greenhouse_id || greenhouseId;
+      if (location && id) {
+        setLocation(id, location.lat, location.lng);
+      }
       setModalOpen(false);
       setMessage(`Greenhouse "${created?.name || name}" created.`);
     });
@@ -350,6 +366,7 @@ export default function GreenhouseListPage({ profile, onLogout, onOpenGreenhouse
     if (!confirmed) return;
     await runAction(async () => {
       await deleteGreenhouse({ greenhouseId: greenhouse.greenhouse_id });
+      removeLocation(greenhouse.greenhouse_id);
       if (expandedConfigFor === greenhouse.greenhouse_id) setExpandedConfigFor('');
       setMessage(`Deleted "${greenhouse.name}".`);
     });
@@ -378,11 +395,13 @@ export default function GreenhouseListPage({ profile, onLogout, onOpenGreenhouse
     }
   };
 
+  const hasAnyLocation = items.some((g) => locations[g.greenhouse_id]);
+
   return (
     <div className="min-h-screen bg-bg">
 
       {/* ── Header ──────────────────────────────────────────────────────── */}
-      <header className="px-5 pt-10 pb-2 max-w-lg mx-auto">
+      <header className="px-5 pt-10 pb-2 max-w-5xl mx-auto">
         <div className="flex items-center justify-between">
           <h1 className="text-4xl text-ink leading-tight" style={serif}>Greenhouses</h1>
           <button
@@ -400,8 +419,19 @@ export default function GreenhouseListPage({ profile, onLogout, onOpenGreenhouse
         )}
       </header>
 
-      {/* ── Content ─────────────────────────────────────────────────────── */}
-      <main className="max-w-lg mx-auto px-5 pt-6 pb-32 flex flex-col gap-4">
+      {/* ── Map section ─────────────────────────────────────────────────── */}
+      {hasAnyLocation && (
+        <section className="max-w-5xl mx-auto px-5 pt-6" style={{ isolation: 'isolate' }}>
+          <GreenhouseMap
+            greenhouses={items}
+            locations={locations}
+            onOpen={onOpenGreenhouse}
+          />
+        </section>
+      )}
+
+      {/* ── Card list ───────────────────────────────────────────────────── */}
+      <main className="max-w-5xl mx-auto px-5 pt-6 pb-32 flex flex-col gap-4">
 
         {/* Feedback banners */}
         {error && (
@@ -415,12 +445,10 @@ export default function GreenhouseListPage({ profile, onLogout, onOpenGreenhouse
           </p>
         )}
 
-        {/* Loading */}
         {loading && (
           <p className="text-sm text-muted py-8 text-center">Loading…</p>
         )}
 
-        {/* Empty state */}
         {!loading && items.length === 0 && (
           <div className="text-center py-16">
             <p className="text-2xl text-ink mb-2" style={serif}>No greenhouses yet</p>
@@ -428,21 +456,24 @@ export default function GreenhouseListPage({ profile, onLogout, onOpenGreenhouse
           </div>
         )}
 
-        {/* Cards — newest first */}
-        {[...items].reverse().map((gh) => (
-          <GreenhouseCard
-            key={gh.greenhouse_id}
-            greenhouse={gh}
-            onOpen={onOpenGreenhouse}
-            onDelete={handleDelete}
-            onRename={(name) => handleRename(gh, name)}
-            pending={pending}
-            showConfig={expandedConfigFor === gh.greenhouse_id}
-            onToggleConfig={handleToggleConfig}
-            config={configByGreenhouse[gh.greenhouse_id]}
-            onCopyConfig={() => copyConfig(gh.greenhouse_id)}
-          />
-        ))}
+        {!loading && items.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[...items].reverse().map((gh) => (
+              <GreenhouseCard
+                key={gh.greenhouse_id}
+                greenhouse={gh}
+                onOpen={onOpenGreenhouse}
+                onDelete={handleDelete}
+                onRename={(name) => handleRename(gh, name)}
+                pending={pending}
+                showConfig={expandedConfigFor === gh.greenhouse_id}
+                onToggleConfig={handleToggleConfig}
+                config={configByGreenhouse[gh.greenhouse_id]}
+                onCopyConfig={() => copyConfig(gh.greenhouse_id)}
+              />
+            ))}
+          </div>
+        )}
       </main>
 
       {/* ── FAB ─────────────────────────────────────────────────────────── */}
@@ -473,5 +504,4 @@ GreenhouseListPage.propTypes = {
   onLogout:         PropTypes.func.isRequired,
   onOpenGreenhouse: PropTypes.func.isRequired,
 };
-
 GreenhouseListPage.defaultProps = { profile: null };
