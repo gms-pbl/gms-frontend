@@ -17,7 +17,36 @@ function isZoneLive(lastSeenAt) {
   return Date.now() - new Date(lastSeenAt).getTime() <= OFFLINE_AFTER_MS;
 }
 
-function makeMarkerIcon(isSelected) {
+function makeMarkerIcon(isSelected, photoUrl) {
+  if (photoUrl) {
+    const imgSize  = isSelected ? 50 : 42;
+    const dotSize  = 8;
+    const gap      = 3;
+    const totalH   = imgSize + gap + dotSize;
+    const border   = isSelected ? '3px solid #374426' : '3px solid #f5f3eb';
+    const dotColor = isSelected ? '#374426' : '#799851';
+    return L.divIcon({
+      className: '',
+      html: `<div style="display:flex;flex-direction:column;align-items:center;gap:${gap}px;">
+        <div style="
+          width:${imgSize}px;height:${imgSize}px;
+          border-radius:50%;overflow:hidden;
+          border:${border};
+          box-shadow:0 3px 12px rgba(0,0,0,0.28);
+        "><img src="${photoUrl}" style="width:100%;height:100%;object-fit:cover;" /></div>
+        <div style="
+          width:${dotSize}px;height:${dotSize}px;
+          border-radius:50%;
+          background:${dotColor};
+          border:2px solid #f5f3eb;
+          box-shadow:0 1px 4px rgba(0,0,0,0.2);
+        "></div>
+      </div>`,
+      iconSize:   [imgSize, totalH],
+      iconAnchor: [imgSize / 2, totalH],
+    });
+  }
+
   const bg   = isSelected ? '#374426' : '#799851';
   const size = isSelected ? 16 : 13;
   return L.divIcon({
@@ -29,7 +58,7 @@ function makeMarkerIcon(isSelected) {
       border:2.5px solid #f5f3eb;
       box-shadow:0 2px 8px rgba(0,0,0,0.3);
     "></div>`,
-    iconSize: [size, size],
+    iconSize:   [size, size],
     iconAnchor: [size / 2, size / 2],
   });
 }
@@ -185,13 +214,13 @@ export default function GreenhouseMap({ greenhouses, locations, photos, descript
         )}
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-4" style={{ minHeight: 340 }}>
+      <div className="flex flex-col lg:flex-row gap-4 items-stretch">
         {/* Map */}
-        <div className="flex-1 rounded-2xl overflow-hidden" style={{ height: 340 }}>
+        <div className="flex-1 rounded-2xl overflow-hidden flex flex-col" style={{ minHeight: 340 }}>
           <MapContainer
             center={MOLDOVA_CENTER}
             zoom={MOLDOVA_ZOOM}
-            style={{ height: '100%', width: '100%' }}
+            style={{ flex: 1, minHeight: 340, width: '100%' }}
             zoomControl
           >
             <TileLayer
@@ -203,7 +232,7 @@ export default function GreenhouseMap({ greenhouses, locations, photos, descript
               <Marker
                 key={gh.greenhouse_id}
                 position={[locations[gh.greenhouse_id].lat, locations[gh.greenhouse_id].lng]}
-                icon={makeMarkerIcon(gh.greenhouse_id === selectedId)}
+                icon={makeMarkerIcon(gh.greenhouse_id === selectedId, photos[gh.greenhouse_id] ?? null)}
                 eventHandlers={{ click: () => handleMarkerClick(gh.greenhouse_id) }}
               />
             ))}

@@ -269,13 +269,13 @@ function GreenhouseCard({ greenhouse, photo, description, onOpen, onDelete, onRe
   };
 
   return (
-    <article className="bg-surface2 rounded-2xl overflow-hidden">
+    <article className="bg-surface2 rounded-2xl overflow-hidden flex">
       {photo && (
-        <div style={{ height: 140 }}>
-          <img src={photo} alt={greenhouse.name} className="w-full h-full object-cover" />
+        <div className="w-44 shrink-0 self-stretch bg-surface2">
+          <img src={photo} alt={greenhouse.name} className="w-full h-full object-contain" />
         </div>
       )}
-      <div className="p-5">
+      <div className="p-5 flex-1 min-w-0">
       {/* Name + icon actions */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
@@ -418,6 +418,12 @@ export default function GreenhouseListPage({ profile, onLogout, onOpenGreenhouse
 
   useEffect(() => { void refresh(); }, [refresh]);
 
+  useEffect(() => {
+    if (!message) return;
+    const t = setTimeout(() => setMessage(''), 4000);
+    return () => clearTimeout(t);
+  }, [message]);
+
   const runAction = useCallback(async (fn) => {
     setPending(true);
     setError('');
@@ -556,7 +562,7 @@ export default function GreenhouseListPage({ profile, onLogout, onOpenGreenhouse
         )}
 
         {!loading && items.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex flex-col gap-4">
             {[...items].reverse().map((gh) => (
               <GreenhouseCard
                 key={gh.greenhouse_id}
