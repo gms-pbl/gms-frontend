@@ -8,23 +8,27 @@ export async function getGreenhouse({ greenhouseId }) {
   return apiRequest(`/v1/g/${encodeURIComponent(greenhouseId)}`, { method: 'GET' });
 }
 
-export async function createGreenhouse({ name, greenhouseId, gatewayId }) {
+export async function createGreenhouse({ name, greenhouseId, gatewayId, latitude, longitude }) {
   return apiRequest('/v1/g', {
     method: 'POST',
     body: {
       name,
       greenhouse_id: greenhouseId,
       gateway_id: gatewayId,
+      latitude,
+      longitude,
     },
   });
 }
 
-export async function updateGreenhouse({ greenhouseId, name, gatewayId }) {
+export async function updateGreenhouse({ greenhouseId, name, gatewayId, latitude, longitude }) {
   return apiRequest(`/v1/g/${encodeURIComponent(greenhouseId)}`, {
     method: 'PATCH',
     body: {
       name,
       gateway_id: gatewayId,
+      latitude,
+      longitude,
     },
   });
 }

@@ -8,7 +8,6 @@ import {
   listGreenhouses,
   updateGreenhouse,
 } from '../../services/greenhouseApi';
-import { useGreenhouseLocations } from '../../hooks/useGreenhouseLocations';
 import { useGreenhousePhotos } from '../../hooks/useGreenhousePhotos';
 import { useGreenhouseDescriptions } from '../../hooks/useGreenhouseDescriptions';
 import GreenhouseMap from './GreenhouseMap';
@@ -271,8 +270,8 @@ function GreenhouseCard({ greenhouse, photo, description, onOpen, onDelete, onRe
   return (
     <article className="bg-surface2 rounded-2xl overflow-hidden flex">
       {photo && (
-        <div className="w-44 shrink-0 self-stretch bg-surface2">
-          <img src={photo} alt={greenhouse.name} className="w-full h-full object-contain" />
+        <div className="w-40 shrink-0 self-stretch overflow-hidden">
+          <img src={photo} alt={greenhouse.name} className="w-full h-full object-cover" />
         </div>
       )}
       <div className="p-5 flex-1 min-w-0">
@@ -399,9 +398,15 @@ export default function GreenhouseListPage({ profile, onLogout, onOpenGreenhouse
   const [expandedConfigFor,   setExpandedConfigFor]   = useState('');
   const [configByGreenhouse,  setConfigByGreenhouse]  = useState({});
 
-  const { locations, setLocation, removeLocation }       = useGreenhouseLocations();
   const { photos, setPhoto, removePhoto }               = useGreenhousePhotos();
   const { descriptions, setDescription, removeDescription } = useGreenhouseDescriptions();
+
+  // Derived from API response — no localStorage needed
+  const locations = Object.fromEntries(
+    items
+      .filter((g) => g.latitude != null && g.longitude != null)
+      .map((g) => [g.greenhouse_id, { lat: g.latitude, lng: g.longitude }])
+  );
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -441,10 +446,15 @@ export default function GreenhouseListPage({ profile, onLogout, onOpenGreenhouse
 
   const handleCreate = async ({ name, greenhouseId, gatewayId, location, photoData, description }) => {
     await runAction(async () => {
-      const created = await createGreenhouse({ name, greenhouseId, gatewayId });
+      const created = await createGreenhouse({
+        name,
+        greenhouseId,
+        gatewayId,
+        latitude:  location?.lat ?? undefined,
+        longitude: location?.lng ?? undefined,
+      });
       const id = created?.greenhouse_id || greenhouseId;
       if (id) {
-        if (location)     setLocation(id, location.lat, location.lng);
         if (photoData)    setPhoto(id, photoData);
         if (description)  setDescription(id, description);
       }
@@ -467,7 +477,6 @@ export default function GreenhouseListPage({ profile, onLogout, onOpenGreenhouse
     if (!confirmed) return;
     await runAction(async () => {
       await deleteGreenhouse({ greenhouseId: greenhouse.greenhouse_id });
-      removeLocation(greenhouse.greenhouse_id);
       removePhoto(greenhouse.greenhouse_id);
       removeDescription(greenhouse.greenhouse_id);
       if (expandedConfigFor === greenhouse.greenhouse_id) setExpandedConfigFor('');
@@ -498,7 +507,7 @@ export default function GreenhouseListPage({ profile, onLogout, onOpenGreenhouse
     }
   };
 
-  const hasAnyLocation = items.some((g) => locations[g.greenhouse_id]);
+  const hasAnyLocation = items.some((g) => g.latitude != null && g.longitude != null);
 
   return (
     <div className="min-h-screen bg-bg">
