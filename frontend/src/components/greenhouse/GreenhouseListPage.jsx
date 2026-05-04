@@ -9,8 +9,31 @@ import {
   updateGreenhouse,
 } from '../../services/greenhouseApi';
 import { useGreenhouseLocations } from '../../hooks/useGreenhouseLocations';
+import { useGreenhousePhotos } from '../../hooks/useGreenhousePhotos';
+import { useGreenhouseDescriptions } from '../../hooks/useGreenhouseDescriptions';
 import GreenhouseMap from './GreenhouseMap';
 import LocationPicker from './LocationPicker';
+
+function compressImage(file, maxPx = 900, quality = 0.75) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
 
 const serif = { fontFamily: "'Playfair Display', Georgia, serif" };
 const mono  = { fontFamily: "'Source Code Pro', monospace" };
@@ -64,6 +87,16 @@ function AddGreenhouseModal({ isOpen, onClose, onSubmit, pending }) {
   const [greenhouseId, setGreenhouseId] = useState('');
   const [gatewayId,    setGatewayId]    = useState('');
   const [location,     setLocation]     = useState(null);
+  const [photoData,    setPhotoData]    = useState(null);
+  const [description,  setDescription]  = useState('');
+
+  const handlePhotoChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const compressed = await compressImage(file);
+    setPhotoData(compressed);
+    e.target.value = '';
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -73,11 +106,15 @@ function AddGreenhouseModal({ isOpen, onClose, onSubmit, pending }) {
       greenhouseId: greenhouseId.trim() || undefined,
       gatewayId:    gatewayId.trim()    || undefined,
       location,
+      photoData,
+      description:  description.trim() || undefined,
     });
     setName('');
     setGreenhouseId('');
     setGatewayId('');
     setLocation(null);
+    setPhotoData(null);
+    setDescription('');
   };
 
   return (
@@ -123,6 +160,20 @@ function AddGreenhouseModal({ isOpen, onClose, onSubmit, pending }) {
 
               <label className="flex flex-col gap-1.5">
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted">
+                  Description{' '}
+                  <span className="normal-case tracking-normal font-normal text-muted/70">(optional)</span>
+                </span>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="e.g. Tomatoes and peppers, south-facing, automated irrigation"
+                  rows={3}
+                  className="rounded-xl border border-border bg-bg px-4 py-3 text-sm text-ink outline-none focus:border-accent transition-colors resize-none"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1.5">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted">
                   Greenhouse ID{' '}
                   <span className="normal-case tracking-normal font-normal text-muted/70">(optional)</span>
                 </span>
@@ -151,6 +202,32 @@ function AddGreenhouseModal({ isOpen, onClose, onSubmit, pending }) {
                 />
               </label>
 
+              {/* Photo upload */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted">
+                  Photo{' '}
+                  <span className="normal-case tracking-normal font-normal text-muted/70">(optional)</span>
+                </span>
+                {photoData ? (
+                  <div className="relative rounded-xl overflow-hidden border border-border" style={{ height: 140 }}>
+                    <img src={photoData} alt="Preview" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setPhotoData(null)}
+                      className="absolute top-2 right-2 w-7 h-7 rounded-full bg-ink/70 text-surface text-base flex items-center justify-center hover:bg-ink transition-colors leading-none"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center gap-1 h-24 rounded-xl border border-border border-dashed bg-bg text-muted text-sm cursor-pointer hover:border-accent hover:text-ink transition-colors">
+                    <span className="text-xl leading-none">↑</span>
+                    <span>Click to upload photo</span>
+                    <input type="file" accept="image/*" className="sr-only" onChange={handlePhotoChange} />
+                  </label>
+                )}
+              </div>
+
               {/* Location picker */}
               <LocationPicker value={location} onChange={setLocation} />
 
@@ -177,7 +254,7 @@ AddGreenhouseModal.propTypes = {
 };
 
 /* ── Single greenhouse card ─────────────────────────────────────────────── */
-function GreenhouseCard({ greenhouse, onOpen, onDelete, onRename, pending, showConfig, onToggleConfig, config, onCopyConfig }) {
+function GreenhouseCard({ greenhouse, photo, description, onOpen, onDelete, onRename, pending, showConfig, onToggleConfig, config, onCopyConfig }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft]     = useState('');
 
@@ -192,7 +269,13 @@ function GreenhouseCard({ greenhouse, onOpen, onDelete, onRename, pending, showC
   };
 
   return (
-    <article className="bg-surface2 rounded-2xl p-5">
+    <article className="bg-surface2 rounded-2xl overflow-hidden">
+      {photo && (
+        <div style={{ height: 140 }}>
+          <img src={photo} alt={greenhouse.name} className="w-full h-full object-cover" />
+        </div>
+      )}
+      <div className="p-5">
       {/* Name + icon actions */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
@@ -249,6 +332,11 @@ function GreenhouseCard({ greenhouse, onOpen, onDelete, onRename, pending, showC
         <span className="text-[11px] text-muted" style={mono}>{greenhouse.greenhouse_id}</span>
       </div>
 
+      {/* Description */}
+      {description && (
+        <p className="text-sm text-muted mt-2 leading-relaxed">{description}</p>
+      )}
+
       {/* Gateway config expand */}
       {showConfig && (
         <div className="mt-4 rounded-xl border border-border/60 bg-surface px-4 py-3">
@@ -280,12 +368,15 @@ function GreenhouseCard({ greenhouse, onOpen, onDelete, onRename, pending, showC
           Open
         </button>
       </div>
+      </div>
     </article>
   );
 }
 
 GreenhouseCard.propTypes = {
   greenhouse:     PropTypes.object.isRequired,
+  photo:          PropTypes.string,
+  description:    PropTypes.string,
   onOpen:         PropTypes.func.isRequired,
   onDelete:       PropTypes.func.isRequired,
   onRename:       PropTypes.func.isRequired,
@@ -295,7 +386,7 @@ GreenhouseCard.propTypes = {
   config:         PropTypes.object,
   onCopyConfig:   PropTypes.func.isRequired,
 };
-GreenhouseCard.defaultProps = { config: null };
+GreenhouseCard.defaultProps = { config: null, photo: null, description: null };
 
 /* ── Page ───────────────────────────────────────────────────────────────── */
 export default function GreenhouseListPage({ profile, onLogout, onOpenGreenhouse }) {
@@ -308,7 +399,9 @@ export default function GreenhouseListPage({ profile, onLogout, onOpenGreenhouse
   const [expandedConfigFor,   setExpandedConfigFor]   = useState('');
   const [configByGreenhouse,  setConfigByGreenhouse]  = useState({});
 
-  const { locations, setLocation, removeLocation } = useGreenhouseLocations();
+  const { locations, setLocation, removeLocation }       = useGreenhouseLocations();
+  const { photos, setPhoto, removePhoto }               = useGreenhousePhotos();
+  const { descriptions, setDescription, removeDescription } = useGreenhouseDescriptions();
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -340,12 +433,14 @@ export default function GreenhouseListPage({ profile, onLogout, onOpenGreenhouse
     }
   }, [refresh]);
 
-  const handleCreate = async ({ name, greenhouseId, gatewayId, location }) => {
+  const handleCreate = async ({ name, greenhouseId, gatewayId, location, photoData, description }) => {
     await runAction(async () => {
       const created = await createGreenhouse({ name, greenhouseId, gatewayId });
       const id = created?.greenhouse_id || greenhouseId;
-      if (location && id) {
-        setLocation(id, location.lat, location.lng);
+      if (id) {
+        if (location)     setLocation(id, location.lat, location.lng);
+        if (photoData)    setPhoto(id, photoData);
+        if (description)  setDescription(id, description);
       }
       setModalOpen(false);
       setMessage(`Greenhouse "${created?.name || name}" created.`);
@@ -367,6 +462,8 @@ export default function GreenhouseListPage({ profile, onLogout, onOpenGreenhouse
     await runAction(async () => {
       await deleteGreenhouse({ greenhouseId: greenhouse.greenhouse_id });
       removeLocation(greenhouse.greenhouse_id);
+      removePhoto(greenhouse.greenhouse_id);
+      removeDescription(greenhouse.greenhouse_id);
       if (expandedConfigFor === greenhouse.greenhouse_id) setExpandedConfigFor('');
       setMessage(`Deleted "${greenhouse.name}".`);
     });
@@ -425,6 +522,8 @@ export default function GreenhouseListPage({ profile, onLogout, onOpenGreenhouse
           <GreenhouseMap
             greenhouses={items}
             locations={locations}
+            photos={photos}
+            descriptions={descriptions}
             onOpen={onOpenGreenhouse}
           />
         </section>
@@ -462,6 +561,8 @@ export default function GreenhouseListPage({ profile, onLogout, onOpenGreenhouse
               <GreenhouseCard
                 key={gh.greenhouse_id}
                 greenhouse={gh}
+                photo={photos[gh.greenhouse_id] ?? null}
+                description={descriptions[gh.greenhouse_id] ?? null}
                 onOpen={onOpenGreenhouse}
                 onDelete={handleDelete}
                 onRename={(name) => handleRename(gh, name)}

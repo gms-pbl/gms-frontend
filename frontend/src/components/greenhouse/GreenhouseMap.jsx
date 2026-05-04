@@ -52,7 +52,7 @@ FlyToController.propTypes = {
 FlyToController.defaultProps = { target: null };
 
 /* ── Info panel shown to the right when a marker is clicked ──────────── */
-function InfoPanel({ greenhouse, onClose, onOpen }) {
+function InfoPanel({ greenhouse, photo, description, onClose, onOpen }) {
   const [zones,        setZones]        = useState(null);
   const [loadingZones, setLoadingZones] = useState(false);
 
@@ -71,80 +71,97 @@ function InfoPanel({ greenhouse, onClose, onOpen }) {
   }, [greenhouse?.greenhouse_id]);
 
   return (
-    <div className="w-64 xl:w-72 shrink-0 bg-surface rounded-2xl p-5 flex flex-col gap-4 overflow-y-auto">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-2">
-        <h3 className="text-xl text-ink leading-snug flex-1" style={serif}>
-          {greenhouse.name}
-        </h3>
+    <div className="w-64 xl:w-72 shrink-0 bg-surface rounded-2xl overflow-hidden flex flex-col">
+      {/* Photo */}
+      {photo && (
+        <div className="shrink-0" style={{ height: 130 }}>
+          <img src={photo} alt={greenhouse.name} className="w-full h-full object-cover" />
+        </div>
+      )}
+
+      <div className="flex flex-col gap-4 p-5 flex-1 overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="text-xl text-ink leading-snug flex-1" style={serif}>
+            {greenhouse.name}
+          </h3>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="w-7 h-7 flex items-center justify-center rounded-full text-muted hover:text-ink hover:bg-surface2 transition-colors shrink-0 text-xl leading-none"
+          >
+            ×
+          </button>
+        </div>
+
+        {/* ID tags */}
+        <div className="flex flex-wrap gap-1.5">
+          <span className="text-[11px] text-muted px-2.5 py-0.5 rounded-full bg-surface2" style={mono}>
+            {greenhouse.greenhouse_id}
+          </span>
+          {greenhouse.gateway_id && (
+            <span className="text-[11px] text-accent px-2.5 py-0.5 rounded-full bg-accent/10" style={mono}>
+              {greenhouse.gateway_id}
+            </span>
+          )}
+        </div>
+
+        {/* Description */}
+        {description && (
+          <p className="text-sm text-muted leading-relaxed">{description}</p>
+        )}
+
+        {/* Zones list */}
+        <div className="flex-1 min-h-0">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted mb-2">Zones</p>
+          {loadingZones ? (
+            <p className="text-sm text-muted">Loading…</p>
+          ) : zones && zones.length > 0 ? (
+            <div className="flex flex-col gap-1.5">
+              {zones.map((z) => (
+                <div key={z.zone_id} className="flex items-center gap-2.5 bg-surface2 rounded-xl px-3 py-2">
+                  <span
+                    className={`w-2 h-2 rounded-full shrink-0 ${z.is_live ? 'bg-accent' : 'bg-border'}`}
+                  />
+                  <div className="min-w-0">
+                    <p className="text-sm text-ink font-medium leading-snug truncate">
+                      {z.zone_name || 'Unnamed zone'}
+                    </p>
+                    <p className="text-[11px] text-muted truncate" style={mono}>
+                      {z.device_id}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted">No zones assigned.</p>
+          )}
+        </div>
+
+        {/* Open button */}
         <button
-          onClick={onClose}
-          aria-label="Close"
-          className="w-7 h-7 flex items-center justify-center rounded-full text-muted hover:text-ink hover:bg-surface2 transition-colors shrink-0 text-xl leading-none"
+          onClick={() => onOpen(greenhouse.greenhouse_id)}
+          className="rounded-2xl bg-ink text-surface h-10 text-sm font-semibold hover:opacity-90 transition-opacity"
         >
-          ×
+          Open Greenhouse →
         </button>
       </div>
-
-      {/* ID tags */}
-      <div className="flex flex-wrap gap-1.5">
-        <span className="text-[11px] text-muted px-2.5 py-0.5 rounded-full bg-surface2" style={mono}>
-          {greenhouse.greenhouse_id}
-        </span>
-        {greenhouse.gateway_id && (
-          <span className="text-[11px] text-accent px-2.5 py-0.5 rounded-full bg-accent/10" style={mono}>
-            {greenhouse.gateway_id}
-          </span>
-        )}
-      </div>
-
-      {/* Zones list */}
-      <div className="flex-1 min-h-0">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted mb-2">Zones</p>
-        {loadingZones ? (
-          <p className="text-sm text-muted">Loading…</p>
-        ) : zones && zones.length > 0 ? (
-          <div className="flex flex-col gap-1.5">
-            {zones.map((z) => (
-              <div key={z.zone_id} className="flex items-center gap-2.5 bg-surface2 rounded-xl px-3 py-2">
-                <span
-                  className={`w-2 h-2 rounded-full shrink-0 ${z.is_live ? 'bg-accent' : 'bg-border'}`}
-                />
-                <div className="min-w-0">
-                  <p className="text-sm text-ink font-medium leading-snug truncate">
-                    {z.zone_name || 'Unnamed zone'}
-                  </p>
-                  <p className="text-[11px] text-muted truncate" style={mono}>
-                    {z.device_id}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-muted">No zones assigned.</p>
-        )}
-      </div>
-
-      {/* Open button */}
-      <button
-        onClick={() => onOpen(greenhouse.greenhouse_id)}
-        className="rounded-2xl bg-ink text-surface h-10 text-sm font-semibold hover:opacity-90 transition-opacity"
-      >
-        Open Greenhouse →
-      </button>
     </div>
   );
 }
 
 InfoPanel.propTypes = {
-  greenhouse: PropTypes.object.isRequired,
-  onClose:    PropTypes.func.isRequired,
-  onOpen:     PropTypes.func.isRequired,
+  greenhouse:  PropTypes.object.isRequired,
+  photo:       PropTypes.string,
+  description: PropTypes.string,
+  onClose:     PropTypes.func.isRequired,
+  onOpen:      PropTypes.func.isRequired,
 };
+InfoPanel.defaultProps = { photo: null, description: null };
 
 /* ── Main map ────────────────────────────────────────────────────────── */
-export default function GreenhouseMap({ greenhouses, locations, onOpen }) {
+export default function GreenhouseMap({ greenhouses, locations, photos, descriptions, onOpen }) {
   const [selectedId, setSelectedId] = useState(null);
 
   const withLocation = greenhouses.filter((g) => locations[g.greenhouse_id]);
@@ -197,6 +214,8 @@ export default function GreenhouseMap({ greenhouses, locations, onOpen }) {
         {selectedGh && (
           <InfoPanel
             greenhouse={selectedGh}
+            photo={photos[selectedGh.greenhouse_id] ?? null}
+            description={descriptions[selectedGh.greenhouse_id] ?? null}
             onClose={() => setSelectedId(null)}
             onOpen={onOpen}
           />
@@ -207,7 +226,9 @@ export default function GreenhouseMap({ greenhouses, locations, onOpen }) {
 }
 
 GreenhouseMap.propTypes = {
-  greenhouses: PropTypes.arrayOf(PropTypes.object).isRequired,
-  locations:   PropTypes.object.isRequired,
-  onOpen:      PropTypes.func.isRequired,
+  greenhouses:  PropTypes.arrayOf(PropTypes.object).isRequired,
+  locations:    PropTypes.object.isRequired,
+  photos:       PropTypes.object.isRequired,
+  descriptions: PropTypes.object.isRequired,
+  onOpen:       PropTypes.func.isRequired,
 };
