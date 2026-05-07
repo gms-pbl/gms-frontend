@@ -7,32 +7,12 @@ import {
   getGreenhouseGatewayConfig,
   listGreenhouses,
   updateGreenhouse,
+  uploadGreenhousePhoto,
 } from '../../services/greenhouseApi';
-import { useGreenhousePhotos } from '../../hooks/useGreenhousePhotos';
-import { useGreenhouseDescriptions } from '../../hooks/useGreenhouseDescriptions';
+import { API_BASE_URL } from '../../config/runtimeConfig';
 import GreenhouseMap from './GreenhouseMap';
 import LocationPicker from './LocationPicker';
 
-function compressImage(file, maxPx = 900, quality = 0.75) {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
-        const w = Math.round(img.width * scale);
-        const h = Math.round(img.height * scale);
-        const canvas = document.createElement('canvas');
-        canvas.width = w;
-        canvas.height = h;
-        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL('image/jpeg', quality));
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
-}
 
 const serif = { fontFamily: "'Playfair Display', Georgia, serif" };
 const mono  = { fontFamily: "'Source Code Pro', monospace" };
@@ -85,15 +65,18 @@ function AddGreenhouseModal({ isOpen, onClose, onSubmit, pending }) {
   const [name,         setName]         = useState('');
   const [greenhouseId, setGreenhouseId] = useState('');
   const [gatewayId,    setGatewayId]    = useState('');
-  const [location,     setLocation]     = useState(null);
-  const [photoData,    setPhotoData]    = useState(null);
-  const [description,  setDescription]  = useState('');
+  const [location,    setLocation]    = useState(null);
+  const [photoFile,   setPhotoFile]   = useState(null);
+  const [previewUrl,  setPreviewUrl]  = useState(null);
+  const [description, setDescription] = useState('');
 
-  const handlePhotoChange = async (e) => {
+  const handlePhotoChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const compressed = await compressImage(file);
-    setPhotoData(compressed);
+    setPhotoFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setPreviewUrl(ev.target.result);
+    reader.readAsDataURL(file);
     e.target.value = '';
   };
 
@@ -105,14 +88,15 @@ function AddGreenhouseModal({ isOpen, onClose, onSubmit, pending }) {
       greenhouseId: greenhouseId.trim() || undefined,
       gatewayId:    gatewayId.trim()    || undefined,
       location,
-      photoData,
+      photoFile,
       description:  description.trim() || undefined,
     });
     setName('');
     setGreenhouseId('');
     setGatewayId('');
     setLocation(null);
-    setPhotoData(null);
+    setPhotoFile(null);
+    setPreviewUrl(null);
     setDescription('');
   };
 
@@ -207,12 +191,12 @@ function AddGreenhouseModal({ isOpen, onClose, onSubmit, pending }) {
                   Photo{' '}
                   <span className="normal-case tracking-normal font-normal text-muted/70">(optional)</span>
                 </span>
-                {photoData ? (
+                {previewUrl ? (
                   <div className="relative rounded-xl overflow-hidden border border-border" style={{ height: 140 }}>
-                    <img src={photoData} alt="Preview" className="w-full h-full object-cover" />
+                    <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
                     <button
                       type="button"
-                      onClick={() => setPhotoData(null)}
+                      onClick={() => { setPhotoFile(null); setPreviewUrl(null); }}
                       className="absolute top-2 right-2 w-7 h-7 rounded-full bg-ink/70 text-surface text-base flex items-center justify-center hover:bg-ink transition-colors leading-none"
                     >
                       ×
@@ -398,14 +382,21 @@ export default function GreenhouseListPage({ profile, onLogout, onOpenGreenhouse
   const [expandedConfigFor,   setExpandedConfigFor]   = useState('');
   const [configByGreenhouse,  setConfigByGreenhouse]  = useState({});
 
-  const { photos, setPhoto, removePhoto }               = useGreenhousePhotos();
-  const { descriptions, setDescription, removeDescription } = useGreenhouseDescriptions();
-
-  // Derived from API response — no localStorage needed
+  // All three maps derived from the API response — no localStorage hooks needed
   const locations = Object.fromEntries(
     items
       .filter((g) => g.latitude != null && g.longitude != null)
       .map((g) => [g.greenhouse_id, { lat: g.latitude, lng: g.longitude }])
+  );
+  const photos = Object.fromEntries(
+    items
+      .filter((g) => g.photo_url)
+      .map((g) => [g.greenhouse_id, `${API_BASE_URL}${g.photo_url}`])
+  );
+  const descriptions = Object.fromEntries(
+    items
+      .filter((g) => g.description)
+      .map((g) => [g.greenhouse_id, g.description])
   );
 
   const refresh = useCallback(async () => {
@@ -444,19 +435,19 @@ export default function GreenhouseListPage({ profile, onLogout, onOpenGreenhouse
     }
   }, [refresh]);
 
-  const handleCreate = async ({ name, greenhouseId, gatewayId, location, photoData, description }) => {
+  const handleCreate = async ({ name, greenhouseId, gatewayId, location, photoFile, description }) => {
     await runAction(async () => {
       const created = await createGreenhouse({
         name,
         greenhouseId,
         gatewayId,
-        latitude:  location?.lat ?? undefined,
-        longitude: location?.lng ?? undefined,
+        latitude:    location?.lat  ?? undefined,
+        longitude:   location?.lng  ?? undefined,
+        description: description    || undefined,
       });
       const id = created?.greenhouse_id || greenhouseId;
-      if (id) {
-        if (photoData)    setPhoto(id, photoData);
-        if (description)  setDescription(id, description);
+      if (id && photoFile) {
+        await uploadGreenhousePhoto({ greenhouseId: id, file: photoFile });
       }
       setModalOpen(false);
       setMessage(`Greenhouse "${created?.name || name}" created.`);
@@ -477,8 +468,6 @@ export default function GreenhouseListPage({ profile, onLogout, onOpenGreenhouse
     if (!confirmed) return;
     await runAction(async () => {
       await deleteGreenhouse({ greenhouseId: greenhouse.greenhouse_id });
-      removePhoto(greenhouse.greenhouse_id);
-      removeDescription(greenhouse.greenhouse_id);
       if (expandedConfigFor === greenhouse.greenhouse_id) setExpandedConfigFor('');
       setMessage(`Deleted "${greenhouse.name}".`);
     });

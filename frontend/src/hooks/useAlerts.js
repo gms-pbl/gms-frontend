@@ -11,7 +11,7 @@ function sortAlerts(list) {
   });
 }
 
-export function useAlerts({ enabled = true } = {}) {
+export function useAlerts({ enabled = true, greenhouseId = '' } = {}) {
   const [alerts, setAlerts] = useState([]);
 
   useEffect(() => {
@@ -25,7 +25,9 @@ export function useAlerts({ enabled = true } = {}) {
       apiRequest('/v1/alerts')
         .then(data => {
           if (cancelled) return;
-          setAlerts(sortAlerts(Array.isArray(data) ? data : []));
+          const all = Array.isArray(data) ? data : [];
+          const filtered = greenhouseId ? all.filter(a => a.greenhouse_id === greenhouseId) : all;
+          setAlerts(sortAlerts(filtered));
         })
         .catch(() => {});
     };
@@ -37,7 +39,7 @@ export function useAlerts({ enabled = true } = {}) {
       cancelled = true;
       clearInterval(id);
     };
-  }, [enabled]);
+  }, [enabled, greenhouseId]);
 
   const acknowledge = useCallback((id) => {
     apiRequest(`/v1/alerts/${id}/acknowledge`, { method: 'POST' })

@@ -38,10 +38,10 @@ export default function AppShell({ greenhouseId }) {
     enabled: !!greenhouseId,
   });
 
-  const { alerts, acknowledge, dismiss } = useAlerts();
+  const { alerts, acknowledge, dismiss } = useAlerts({ greenhouseId });
   const { zones: irrigationZones, loading: irrigationLoading, toggleZone, manualOverride, emergencyStop } = useIrrigation(greenhouseId);
 
-  const unackedCritical = alerts.filter(a => a.severity === 'CRITICAL' && !a.acknowledged).length;
+  const unackedCount = alerts.filter(a => !a.acknowledged).length;
 
   const tabCls = (view) =>
     `px-4 py-1.5 rounded-full text-xs font-semibold capitalize transition-colors whitespace-nowrap ${
@@ -105,9 +105,9 @@ export default function AppShell({ greenhouseId }) {
             onClick={() => setActiveView('notifications')}
           >
             Notifications
-            {unackedCritical > 0 && (
+            {unackedCount > 0 && (
               <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 text-[9px] rounded-full bg-crit text-white font-bold leading-none">
-                {unackedCritical}
+                {unackedCount}
               </span>
             )}
           </button>
@@ -150,7 +150,7 @@ export default function AppShell({ greenhouseId }) {
       </div>
 
       <MobileNav
-        unackedCriticalCount={unackedCritical}
+        unackedCountCount={unackedCount}
         onOpenAlerts={() => setActiveView('notifications')}
         activeView={activeView}
         onSetView={setActiveView}

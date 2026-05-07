@@ -1,4 +1,5 @@
 import { apiRequest } from './apiClient';
+import { API_BASE_URL } from '../config/runtimeConfig';
 
 export async function listGreenhouses() {
   return apiRequest('/v1/g', { method: 'GET' });
@@ -8,7 +9,7 @@ export async function getGreenhouse({ greenhouseId }) {
   return apiRequest(`/v1/g/${encodeURIComponent(greenhouseId)}`, { method: 'GET' });
 }
 
-export async function createGreenhouse({ name, greenhouseId, gatewayId, latitude, longitude }) {
+export async function createGreenhouse({ name, greenhouseId, gatewayId, latitude, longitude, description }) {
   return apiRequest('/v1/g', {
     method: 'POST',
     body: {
@@ -17,11 +18,12 @@ export async function createGreenhouse({ name, greenhouseId, gatewayId, latitude
       gateway_id: gatewayId,
       latitude,
       longitude,
+      description,
     },
   });
 }
 
-export async function updateGreenhouse({ greenhouseId, name, gatewayId, latitude, longitude }) {
+export async function updateGreenhouse({ greenhouseId, name, gatewayId, latitude, longitude, description }) {
   return apiRequest(`/v1/g/${encodeURIComponent(greenhouseId)}`, {
     method: 'PATCH',
     body: {
@@ -29,8 +31,21 @@ export async function updateGreenhouse({ greenhouseId, name, gatewayId, latitude
       gateway_id: gatewayId,
       latitude,
       longitude,
+      description,
     },
   });
+}
+
+export async function uploadGreenhousePhoto({ greenhouseId, file }) {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(`${API_BASE_URL}/v1/g/${encodeURIComponent(greenhouseId)}/photo`, {
+    method: 'POST',
+    body: form,
+    credentials: 'include',
+  });
+  if (!res.ok) throw new Error(`Photo upload failed: ${res.status}`);
+  return res.json();
 }
 
 export async function deleteGreenhouse({ greenhouseId }) {

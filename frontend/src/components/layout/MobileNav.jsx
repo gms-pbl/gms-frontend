@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import AlertBadge from '../alerts/AlertBadge';
 
-export default function MobileNav({ unackedCriticalCount, onOpenAlerts, activeView, onSetView }) {
+export default function MobileNav({ unackedCount, onOpenAlerts, activeView, onSetView }) {
   const tabCls = (view) =>
     `flex flex-col items-center gap-0.5 min-w-[44px] min-h-[44px] justify-center transition-colors ${
       activeView === view ? 'text-accent' : 'text-muted hover:text-ink'
@@ -40,7 +40,7 @@ export default function MobileNav({ unackedCriticalCount, onOpenAlerts, activeVi
           <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
           </svg>
-          <AlertBadge count={unackedCriticalCount} />
+          <AlertBadge count={unackedCount} />
         </span>
         <span className="text-[8px] tracking-widest uppercase" style={{ fontFamily: "'Source Code Pro', monospace" }}>Alerts</span>
       </button>
@@ -49,7 +49,7 @@ export default function MobileNav({ unackedCriticalCount, onOpenAlerts, activeVi
 }
 
 MobileNav.propTypes = {
-  unackedCriticalCount: PropTypes.number.isRequired,
+  unackedCount: PropTypes.number.isRequired,
   onOpenAlerts:         PropTypes.func.isRequired,
   activeView:           PropTypes.oneOf(['sensors', 'irrigation']).isRequired,
   onSetView:            PropTypes.func.isRequired,
