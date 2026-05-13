@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import SensorDashboard from '../dashboard/SensorDashboard';
+import ZoneLayers from '../dashboard/ZoneLayers';
 import GlobalFeedStatus from '../dashboard/GlobalFeedStatus';
 import MobileNav from './MobileNav';
 import AlertPanel from '../alerts/AlertPanel';
@@ -29,7 +30,7 @@ export default function AppShell({ greenhouseId }) {
     [assignedZones],
   );
 
-  const selectedZone = assignedZones.find(z => z.zone_id === manualZoneId) ?? assignedZones[0] ?? null;
+  const selectedZone = assignedZones.find(z => z.zone_id === manualZoneId) ?? null;
   const selectedZoneId = selectedZone?.zone_id ?? '';
 
   const readings = useSensorData({
@@ -94,7 +95,7 @@ export default function AppShell({ greenhouseId }) {
 
         {/* Tab bar */}
         <div className="flex items-center gap-1 px-5 sm:px-8 h-11 border-t border-border/40 bg-surface">
-          <button className={tabCls('sensors')} onClick={() => setActiveView('sensors')}>
+          <button className={tabCls('sensors')} onClick={() => { if (activeView === 'sensors' && selectedZoneId) setManualZoneId(''); else setActiveView('sensors'); }}>
             Sensors
           </button>
           <button className={tabCls('irrigation')} onClick={() => setActiveView('irrigation')}>
@@ -118,14 +119,19 @@ export default function AppShell({ greenhouseId }) {
       <div className="flex flex-1 overflow-hidden">
         <main className="flex-1 overflow-y-auto pb-16 lg:pb-0">
           <AnimatePresence mode="wait">
-            {activeView === 'sensors' && (
+            {activeView === 'sensors' && !selectedZoneId && assignedZones.length > 0 && (
+              <motion.div key="zone-layers" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.18 }}>
+                <ZoneLayers zones={assignedZones} onSelectZone={setManualZoneId} />
+              </motion.div>
+            )}
+            {activeView === 'sensors' && (selectedZoneId || assignedZones.length === 0) && (
               <motion.div key="sensors" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.18 }}>
                 <SensorDashboard
                   readings={readings}
                   greenhouseId={greenhouseId}
                   zones={assignedZones}
                   selectedZoneId={selectedZoneId}
-                  onSelectZone={setManualZoneId}
+                  onBack={assignedZones.length > 0 ? () => setManualZoneId('') : undefined}
                 />
               </motion.div>
             )}

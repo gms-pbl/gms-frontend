@@ -13,7 +13,7 @@ const SENSOR_DISPLAY_KEYS = new Set([
   'soil_n', 'soil_p', 'soil_k', 'soil_salinity', 'soil_tds',
 ]);
 
-export default function SensorDashboard({ readings, greenhouseId, zones, selectedZoneId, onSelectZone }) {
+export default function SensorDashboard({ readings, greenhouseId, zones, selectedZoneId, onBack }) {
   const [selectedKey, setSelectedKey] = useState(null);
 
   const sensorReadings  = readings.filter(r => SENSOR_DISPLAY_KEYS.has(r.sensor_key));
@@ -21,30 +21,8 @@ export default function SensorDashboard({ readings, greenhouseId, zones, selecte
   const criticalCount   = sensorReadings.filter(r => r.status === 'CRITICAL' || r.status === 'ERR').length;
   const selectedZone    = zones.find(z => z.zone_id === selectedZoneId) ?? null;
 
-  const zonePillCls = (zoneId) =>
-    `shrink-0 px-4 h-7 rounded-full text-xs font-semibold transition-colors whitespace-nowrap ${
-      zoneId === selectedZoneId
-        ? 'bg-ink text-surface'
-        : 'text-muted hover:text-ink'
-    }`;
-
   return (
     <div className="flex flex-col h-full">
-
-      {/* Zone tab strip */}
-      {zones.length > 0 && (
-        <div className="shrink-0 flex items-center gap-2 px-5 sm:px-7 py-2.5 overflow-x-auto border-b border-border bg-surface">
-          {zones.map(z => (
-            <button
-              key={z.zone_id}
-              onClick={() => onSelectZone(z.zone_id)}
-              className={zonePillCls(z.zone_id)}
-            >
-              {z.zone_name || z.zone_id}
-            </button>
-          ))}
-        </div>
-      )}
 
       {/* No zones assigned */}
       {zones.length === 0 && greenhouseId && (
@@ -62,6 +40,17 @@ export default function SensorDashboard({ readings, greenhouseId, zones, selecte
       {/* Section header */}
       <div className="px-5 sm:px-7 pt-5 pb-4 flex items-end justify-between">
         <div>
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="flex items-center gap-1 text-xs text-muted hover:text-ink transition-colors mb-2.5"
+            >
+              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 19l-7-7 7-7" />
+              </svg>
+              All zones
+            </button>
+          )}
           <h2 className="text-ink text-xl sm:text-2xl leading-none" style={serif}>
             Sensor Readings
           </h2>
@@ -146,12 +135,12 @@ SensorDashboard.propTypes = {
   greenhouseId:   PropTypes.string,
   zones:          PropTypes.array,
   selectedZoneId: PropTypes.string,
-  onSelectZone:   PropTypes.func,
+  onBack:         PropTypes.func,
 };
 
 SensorDashboard.defaultProps = {
   greenhouseId:   '',
   zones:          [],
   selectedZoneId: '',
-  onSelectZone:   () => {},
+  onBack:         null,
 };
