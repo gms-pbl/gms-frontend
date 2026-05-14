@@ -202,8 +202,6 @@ export default function ZoneLayers({ zones, onSelectZone }) {
           <h2 className="text-2xl text-ink leading-none" style={serif}>Greenhouse Layout</h2>
           <p className="text-sm text-muted mt-1">Select a zone to view its sensor readings.</p>
         </div>
-
-        {/* Compass */}
         <div className="flex flex-col items-center gap-0.5 text-muted shrink-0 ml-4" style={mono}>
           <svg className="w-5 h-5 text-accent" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2l2 7h-4l2-7z" />
@@ -216,81 +214,92 @@ export default function ZoneLayers({ zones, onSelectZone }) {
         </div>
       </div>
 
-      {/* Greenhouse boundary */}
-      <div className="relative rounded-2xl border-2 border-accent/35 bg-accent/[0.03] overflow-hidden w-full max-w-xl">
-
-        {/* Blueprint corner marks */}
-        <svg className="absolute top-0 left-0 w-5 h-5 text-accent/50" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+      {/* Greenhouse boundary — floor plan style */}
+      <div
+        className="relative rounded-xl border-2 border-accent/40 overflow-hidden w-full max-w-xl"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(120,120,120,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(120,120,120,0.08) 1px, transparent 1px)',
+          backgroundSize: '36px 36px',
+        }}
+      >
+        {/* Corner marks */}
+        <svg className="absolute top-0 left-0 w-5 h-5 text-accent/60" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M5 2H2v3" />
         </svg>
-        <svg className="absolute top-0 right-0 w-5 h-5 text-accent/50" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <svg className="absolute top-0 right-0 w-5 h-5 text-accent/60" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M15 2h3v3" />
         </svg>
-        <svg className="absolute bottom-8 left-0 w-5 h-5 text-accent/50" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <svg className="absolute bottom-0 left-0 w-5 h-5 text-accent/60" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M5 18H2v-3" />
         </svg>
-        <svg className="absolute bottom-8 right-0 w-5 h-5 text-accent/50" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <svg className="absolute bottom-0 right-0 w-5 h-5 text-accent/60" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M15 18h3v-3" />
         </svg>
 
-        {/* Zone grid */}
-        <div
-          className="grid gap-2 p-4"
-          style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
-        >
-          {zones.map((zone, i) => {
-            const Icon = ICON_MAP[detectCrop(zone.zone_name)] ?? PlantIcon;
-            const live = isLive(zone.last_seen_at);
+        {/* Zone bed grid */}
+        <div className="px-4 pt-3 pb-4">
+          <div
+            className="grid gap-3"
+            style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+          >
+            {zones.map((zone, i) => {
+              const Icon = ICON_MAP[detectCrop(zone.zone_name)] ?? PlantIcon;
+              const live = isLive(zone.last_seen_at);
 
-            return (
-              <motion.button
-                key={zone.zone_id}
-                type="button"
-                onClick={() => onSelectZone(zone.zone_id)}
-                className="relative flex flex-col items-center justify-center gap-2 p-3 rounded-xl border border-border bg-surface hover:bg-surface2 cursor-pointer text-center aspect-square focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                whileHover={{ scale: 1.05, y: -2 }}
-                whileTap={{ scale: 0.97 }}
-                transition={{ duration: 0.15, ease: 'easeOut' }}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1, transition: { delay: i * 0.06, duration: 0.2 } }}
-              >
-                {/* Live status dot */}
-                <span
-                  className={`absolute top-2 right-2 w-2 h-2 rounded-full ${live ? 'bg-accent' : 'bg-border'}`}
-                  title={live ? 'Live' : 'Offline'}
-                />
+              return (
+                <motion.button
+                  key={zone.zone_id}
+                  type="button"
+                  onClick={() => onSelectZone(zone.zone_id)}
+                  className="relative flex flex-col items-center justify-center gap-2 p-3 rounded-lg border-2 border-dashed border-accent/40 bg-accent/[0.14] hover:bg-accent/[0.22] hover:border-accent/70 cursor-pointer text-center aspect-square focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent transition-colors"
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.97 }}
+                  transition={{ duration: 0.15, ease: 'easeOut' }}
+                  initial={{ opacity: 0, scale: 0.92 }}
+                  animate={{ opacity: 1, scale: 1, transition: { delay: i * 0.06, duration: 0.2 } }}
+                >
+                  {/* Live dot top-right */}
+                  <span
+                    className={`absolute top-2 right-2 w-2 h-2 rounded-full ${live ? 'bg-accent' : 'bg-border'}`}
+                    title={live ? 'Live' : 'Offline'}
+                  />
 
-                {/* Crop icon */}
-                <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center text-accent shrink-0">
-                  <Icon />
-                </div>
+                  {/* Crop icon */}
+                  <div className="w-14 h-14 rounded-xl bg-accent/10 flex items-center justify-center text-accent shrink-0">
+                    <Icon />
+                  </div>
 
-                {/* Zone name */}
-                <p className="text-xs font-semibold text-ink leading-snug px-1 line-clamp-2 w-full">
-                  {zone.zone_name || zone.zone_id}
-                </p>
-
-                {/* Device ID */}
-                {zone.device_id && (
-                  <p className="text-[10px] text-muted truncate w-full leading-none" style={mono}>
-                    {zone.device_id}
+                  {/* Zone name */}
+                  <p className="text-xs font-semibold text-ink leading-snug px-1 line-clamp-2 w-full">
+                    {zone.zone_name || zone.zone_id}
                   </p>
-                )}
-              </motion.button>
-            );
-          })}
+
+                  {/* Device ID */}
+                  {zone.device_id && (
+                    <p className="text-[9px] text-muted truncate w-full leading-none" style={mono}>
+                      {zone.device_id}
+                    </p>
+                  )}
+                </motion.button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Entrance label */}
-        <div className="flex items-center justify-center gap-1.5 pb-3 text-muted">
-          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M19 9l-7 7-7-7" />
-          </svg>
-          <span className="text-[9px] tracking-widest uppercase" style={mono}>Entrance</span>
-          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M19 9l-7 7-7-7" />
-          </svg>
-        </div>
+      </div>
+
+      {/* Entrance — outside boundary so corners sit flush */}
+      <div className="flex items-center justify-center gap-2 mt-2.5 text-muted w-full max-w-xl">
+        <div className="h-px w-8 bg-accent/30" />
+        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M19 9l-7 7-7-7" />
+        </svg>
+        <span className="text-[9px] tracking-widest uppercase" style={mono}>Entrance</span>
+        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M19 9l-7 7-7-7" />
+        </svg>
+        <div className="h-px w-8 bg-accent/30" />
       </div>
     </div>
   );
