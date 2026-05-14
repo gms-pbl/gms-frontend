@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 
 const serif = { fontFamily: "'Playfair Display', Georgia, serif" };
 const mono  = { fontFamily: "'Source Code Pro', monospace" };
-const IC    = 'w-7 h-7';
+const IC    = 'w-10 h-10';
 
 /* ── Crop icon SVGs ────────────────────────────────────────────────────── */
 const TomatoIcon = () => (
@@ -181,20 +181,63 @@ function isLive(lastSeenAt) {
   return !!lastSeenAt && Date.now() - new Date(lastSeenAt).getTime() < LIVE_MS;
 }
 
-const OVERLAP = 24; // px each card slides under the one above
-const CARD_H  = 80; // px
+function gridCols(n) {
+  if (n <= 1) return 1;
+  if (n <= 4) return 2;
+  if (n <= 9) return 3;
+  return 4;
+}
 
 export default function ZoneLayers({ zones, onSelectZone }) {
   if (zones.length === 0) return null;
 
-  return (
-    <div className="flex flex-col items-center px-5 sm:px-7 pt-10">
-      <div className="w-full max-w-lg">
-        <h2 className="text-2xl text-ink mb-1.5" style={serif}>Your Zones</h2>
-        <p className="text-sm text-muted mb-8">Select a zone to view its sensor readings.</p>
+  const cols = gridCols(zones.length);
 
-        {/* Stacked layer cards */}
-        <div className="relative" style={{ paddingBottom: 32 }}>
+  return (
+    <div className="flex flex-col items-center px-5 sm:px-7 pt-6 pb-8">
+
+      {/* Header + compass */}
+      <div className="flex items-end justify-between mb-4 w-full max-w-xl">
+        <div>
+          <h2 className="text-2xl text-ink leading-none" style={serif}>Greenhouse Layout</h2>
+          <p className="text-sm text-muted mt-1">Select a zone to view its sensor readings.</p>
+        </div>
+
+        {/* Compass */}
+        <div className="flex flex-col items-center gap-0.5 text-muted shrink-0 ml-4" style={mono}>
+          <svg className="w-5 h-5 text-accent" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2l2 7h-4l2-7z" />
+            <path d="M12 22l-2-7h4l-2 7z" opacity="0.3" />
+            <path d="M2 12l7-2v4L2 12z" opacity="0.3" />
+            <path d="M22 12l-7 2v-4l7 2z" opacity="0.3" />
+            <circle cx="12" cy="12" r="2" />
+          </svg>
+          <span className="text-[9px] tracking-[0.15em] font-semibold">N</span>
+        </div>
+      </div>
+
+      {/* Greenhouse boundary */}
+      <div className="relative rounded-2xl border-2 border-accent/35 bg-accent/[0.03] overflow-hidden w-full max-w-xl">
+
+        {/* Blueprint corner marks */}
+        <svg className="absolute top-0 left-0 w-5 h-5 text-accent/50" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M5 2H2v3" />
+        </svg>
+        <svg className="absolute top-0 right-0 w-5 h-5 text-accent/50" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M15 2h3v3" />
+        </svg>
+        <svg className="absolute bottom-8 left-0 w-5 h-5 text-accent/50" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M5 18H2v-3" />
+        </svg>
+        <svg className="absolute bottom-8 right-0 w-5 h-5 text-accent/50" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M15 18h3v-3" />
+        </svg>
+
+        {/* Zone grid */}
+        <div
+          className="grid gap-2 p-4"
+          style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+        >
           {zones.map((zone, i) => {
             const Icon = ICON_MAP[detectCrop(zone.zone_name)] ?? PlantIcon;
             const live = isLive(zone.last_seen_at);
@@ -204,47 +247,49 @@ export default function ZoneLayers({ zones, onSelectZone }) {
                 key={zone.zone_id}
                 type="button"
                 onClick={() => onSelectZone(zone.zone_id)}
-                className="relative w-full flex items-center gap-4 px-5 text-left rounded-2xl border border-border bg-surface2 cursor-pointer shadow-sm hover:shadow-lg transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                style={{
-                  height: CARD_H,
-                  marginTop: i === 0 ? 0 : -OVERLAP,
-                  zIndex: zones.length - i,
-                  borderBottomWidth: 3,
-                  borderBottomColor: 'rgba(44,56,32,0.15)',
-                }}
-                whileHover={{ y: -8 }}
-                transition={{ duration: 0.18, ease: 'easeOut' }}
+                className="relative flex flex-col items-center justify-center gap-2 p-3 rounded-xl border border-border bg-surface hover:bg-surface2 cursor-pointer text-center aspect-square focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.97 }}
+                transition={{ duration: 0.15, ease: 'easeOut' }}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1, transition: { delay: i * 0.06, duration: 0.2 } }}
               >
+                {/* Live status dot */}
+                <span
+                  className={`absolute top-2 right-2 w-2 h-2 rounded-full ${live ? 'bg-accent' : 'bg-border'}`}
+                  title={live ? 'Live' : 'Offline'}
+                />
+
                 {/* Crop icon */}
-                <div className="w-11 h-11 shrink-0 rounded-xl bg-accent/10 flex items-center justify-center text-accent">
+                <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center text-accent shrink-0">
                   <Icon />
                 </div>
 
-                {/* Zone name + device */}
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-ink text-base leading-snug truncate">
-                    {zone.zone_name || zone.zone_id}
-                  </p>
-                  {zone.device_id && (
-                    <p className="text-[11px] text-muted truncate mt-0.5" style={mono}>
-                      {zone.device_id}
-                    </p>
-                  )}
-                </div>
+                {/* Zone name */}
+                <p className="text-xs font-semibold text-ink leading-snug px-1 line-clamp-2 w-full">
+                  {zone.zone_name || zone.zone_id}
+                </p>
 
-                {/* Status dot + chevron */}
-                <div className="flex items-center gap-2.5 shrink-0">
-                  <span
-                    className={`w-2 h-2 rounded-full ${live ? 'bg-accent' : 'bg-border'}`}
-                    title={live ? 'Live' : 'Offline'}
-                  />
-                  <svg className="w-4 h-4 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
+                {/* Device ID */}
+                {zone.device_id && (
+                  <p className="text-[10px] text-muted truncate w-full leading-none" style={mono}>
+                    {zone.device_id}
+                  </p>
+                )}
               </motion.button>
             );
           })}
+        </div>
+
+        {/* Entrance label */}
+        <div className="flex items-center justify-center gap-1.5 pb-3 text-muted">
+          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 9l-7 7-7-7" />
+          </svg>
+          <span className="text-[9px] tracking-widest uppercase" style={mono}>Entrance</span>
+          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 9l-7 7-7-7" />
+          </svg>
         </div>
       </div>
     </div>
