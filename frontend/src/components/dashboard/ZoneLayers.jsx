@@ -190,7 +190,7 @@ function gridCols(n) {
   return 4;
 }
 
-function defaultPosFor(index, cell = 180, gap = 16, perRow = 3) {
+function defaultPosFor(index, cell = 180, gap = 20, perRow = 3) {
   const col = index % perRow;
   const row = Math.floor(index / perRow);
   return { x: col * (cell + gap), y: row * (cell + gap), w: cell, h: cell };
@@ -498,9 +498,10 @@ export default function ZoneLayers({ zones, onSelectZone, greenhouseId }) {
                 top: false, left: false, topRight: false,
                 bottomLeft: false, topLeft: false,
               }}
-              onDragStart={() => { draggingRef.current = true; }}
+              onDragStart={() => { draggingRef.current = false; }}
+              onDrag={() => { draggingRef.current = true; }}
               onDragStop={(_, d) => {
-                updateLayout(zone.zone_id, { x: d.x, y: d.y });
+                if (draggingRef.current) updateLayout(zone.zone_id, { x: d.x, y: d.y });
                 setTimeout(() => { draggingRef.current = false; }, 0);
               }}
               onResizeStop={(_, __, ref, ___, pos) => {
