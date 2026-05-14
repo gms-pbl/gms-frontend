@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { apiRequest } from '../services/apiClient';
 
 const GRANULARITY_FOR_RANGE = {
-  '24h': 'hourly',
+  '24h': 'minute',
   '7d':  'hourly',
   '30d': 'daily',
 };
@@ -21,8 +21,14 @@ export function useHistoricalData({ greenhouseId, sensorKey, zoneId, range = '24
   const [meta, setMeta] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [tick, setTick] = useState(0);
 
   const resolvedGranularity = granularity ?? GRANULARITY_FOR_RANGE[range] ?? 'hourly';
+
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 30_000);
+    return () => clearInterval(id);
+  }, [range]);
 
   useEffect(() => {
     if (!sensorKey || !greenhouseId) {
@@ -55,7 +61,7 @@ export function useHistoricalData({ greenhouseId, sensorKey, zoneId, range = '24
         setData([]);
       })
       .finally(() => setIsLoading(false));
-  }, [greenhouseId, sensorKey, zoneId, range, resolvedGranularity]);
+  }, [greenhouseId, sensorKey, zoneId, range, resolvedGranularity, tick]);
 
   return { data, meta, isLoading, error };
 }
