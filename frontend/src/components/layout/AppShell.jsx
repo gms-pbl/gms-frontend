@@ -121,7 +121,7 @@ export default function AppShell({ greenhouseId }) {
           <AnimatePresence mode="wait">
             {activeView === 'sensors' && !selectedZoneId && assignedZones.length > 0 && (
               <motion.div key="zone-layers" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.18 }}>
-                <ZoneLayers zones={assignedZones} onSelectZone={setManualZoneId} />
+                <ZoneLayers zones={assignedZones} onSelectZone={setManualZoneId} greenhouseId={greenhouseId} />
               </motion.div>
             )}
             {activeView === 'sensors' && (selectedZoneId || assignedZones.length === 0) && (

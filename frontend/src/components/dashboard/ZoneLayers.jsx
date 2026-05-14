@@ -1,4 +1,5 @@
-import { motion } from 'motion/react';
+import { Rnd } from 'react-rnd';
+import { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 
 const serif = { fontFamily: "'Playfair Display', Georgia, serif" };
@@ -181,116 +182,179 @@ function isLive(lastSeenAt) {
   return !!lastSeenAt && Date.now() - new Date(lastSeenAt).getTime() < LIVE_MS;
 }
 
-function gridCols(n) {
-  if (n <= 1) return 1;
-  if (n <= 4) return 2;
-  if (n <= 9) return 3;
-  return 4;
+function defaultPosFor(index, cell = 180, gap = 16, perRow = 3) {
+  const col = index % perRow;
+  const row = Math.floor(index / perRow);
+  return { x: col * (cell + gap), y: row * (cell + gap), w: cell, h: cell };
 }
 
-export default function ZoneLayers({ zones, onSelectZone }) {
+function loadLayouts(zones, key) {
+  let saved = {};
+  try {
+    const raw = JSON.parse(localStorage.getItem(key) || '{}');
+    if (raw && !Array.isArray(raw) && typeof raw === 'object') saved = raw;
+  } catch {}
+  const result = {};
+  zones.forEach((z, i) => {
+    result[z.zone_id] = saved[z.zone_id] ?? defaultPosFor(i);
+  });
+  return result;
+}
+
+function saveLayouts(key, layouts) {
+  try { localStorage.setItem(key, JSON.stringify(layouts)); } catch {}
+}
+
+export default function ZoneLayers({ zones, onSelectZone, greenhouseId }) {
+  const STORAGE_KEY = `gms-zone-layout-${greenhouseId}`;
+  const [layouts, setLayouts] = useState(() => loadLayouts(zones, STORAGE_KEY));
+  const draggingRef = useRef(false);
+
+  useEffect(() => { setLayouts(loadLayouts(zones, STORAGE_KEY)); }, [zones, STORAGE_KEY]);
+
   if (zones.length === 0) return null;
 
-  const cols = gridCols(zones.length);
+  const updateLayout = (id, patch) => {
+    setLayouts(prev => {
+      const next = { ...prev, [id]: { ...prev[id], ...patch } };
+      saveLayouts(STORAGE_KEY, next);
+      return next;
+    });
+  };
+
+  const resetLayout = () => {
+    try { localStorage.removeItem(STORAGE_KEY); } catch {}
+    setLayouts(loadLayouts(zones, STORAGE_KEY));
+  };
 
   return (
     <div className="flex flex-col items-center px-5 sm:px-7 pt-6 pb-8">
 
-      {/* Header + compass */}
-      <div className="flex items-end justify-between mb-4 w-full max-w-xl">
+      {/* Header + compass + reset */}
+      <div className="flex items-end justify-between mb-4 w-full max-w-2xl">
         <div>
           <h2 className="text-2xl text-ink leading-none" style={serif}>Greenhouse Layout</h2>
-          <p className="text-sm text-muted mt-1">Select a zone to view its sensor readings.</p>
+          <p className="text-sm text-muted mt-1">Drag to reposition · drag bottom-right corner to resize · click to view readings.</p>
         </div>
-        <div className="flex flex-col items-center gap-0.5 text-muted shrink-0 ml-4" style={mono}>
-          <svg className="w-5 h-5 text-accent" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2l2 7h-4l2-7z" />
-            <path d="M12 22l-2-7h4l-2 7z" opacity="0.3" />
-            <path d="M2 12l7-2v4L2 12z" opacity="0.3" />
-            <path d="M22 12l-7 2v-4l7 2z" opacity="0.3" />
-            <circle cx="12" cy="12" r="2" />
-          </svg>
-          <span className="text-[9px] tracking-[0.15em] font-semibold">N</span>
-        </div>
-      </div>
-
-      {/* Greenhouse boundary — floor plan style */}
-      <div
-        className="relative rounded-xl border-2 border-accent/40 overflow-hidden w-full max-w-xl"
-        style={{
-          backgroundImage:
-            'linear-gradient(rgba(120,120,120,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(120,120,120,0.08) 1px, transparent 1px)',
-          backgroundSize: '36px 36px',
-        }}
-      >
-        {/* Corner marks */}
-        <svg className="absolute top-0 left-0 w-5 h-5 text-accent/60" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M5 2H2v3" />
-        </svg>
-        <svg className="absolute top-0 right-0 w-5 h-5 text-accent/60" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M15 2h3v3" />
-        </svg>
-        <svg className="absolute bottom-0 left-0 w-5 h-5 text-accent/60" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M5 18H2v-3" />
-        </svg>
-        <svg className="absolute bottom-0 right-0 w-5 h-5 text-accent/60" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M15 18h3v-3" />
-        </svg>
-
-        {/* Zone bed grid */}
-        <div className="px-4 pt-3 pb-4">
-          <div
-            className="grid gap-3"
-            style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+        <div className="flex items-center gap-3 shrink-0 ml-4">
+          <button
+            onClick={resetLayout}
+            className="text-xs text-muted hover:text-ink transition-colors"
           >
-            {zones.map((zone, i) => {
-              const Icon = ICON_MAP[detectCrop(zone.zone_name)] ?? PlantIcon;
-              const live = isLive(zone.last_seen_at);
-
-              return (
-                <motion.button
-                  key={zone.zone_id}
-                  type="button"
-                  onClick={() => onSelectZone(zone.zone_id)}
-                  className="relative flex flex-col items-center justify-center gap-2 p-3 rounded-lg border-2 border-dashed border-accent/40 bg-accent/[0.14] hover:bg-accent/[0.22] hover:border-accent/70 cursor-pointer text-center aspect-square focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent transition-colors"
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.97 }}
-                  transition={{ duration: 0.15, ease: 'easeOut' }}
-                  initial={{ opacity: 0, scale: 0.92 }}
-                  animate={{ opacity: 1, scale: 1, transition: { delay: i * 0.06, duration: 0.2 } }}
-                >
-                  {/* Live dot top-right */}
-                  <span
-                    className={`absolute top-2 right-2 w-2 h-2 rounded-full ${live ? 'bg-accent' : 'bg-border'}`}
-                    title={live ? 'Live' : 'Offline'}
-                  />
-
-                  {/* Crop icon */}
-                  <div className="w-14 h-14 rounded-xl bg-accent/10 flex items-center justify-center text-accent shrink-0">
-                    <Icon />
-                  </div>
-
-                  {/* Zone name */}
-                  <p className="text-xs font-semibold text-ink leading-snug px-1 line-clamp-2 w-full">
-                    {zone.zone_name || zone.zone_id}
-                  </p>
-
-                  {/* Device ID */}
-                  {zone.device_id && (
-                    <p className="text-[9px] text-muted truncate w-full leading-none" style={mono}>
-                      {zone.device_id}
-                    </p>
-                  )}
-                </motion.button>
-              );
-            })}
+            Reset layout
+          </button>
+          <div className="flex flex-col items-center gap-0.5 text-muted" style={mono}>
+            <svg className="w-5 h-5 text-accent" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2l2 7h-4l2-7z" />
+              <path d="M12 22l-2-7h4l-2 7z" opacity="0.3" />
+              <path d="M2 12l7-2v4L2 12z" opacity="0.3" />
+              <path d="M22 12l-7 2v-4l7 2z" opacity="0.3" />
+              <circle cx="12" cy="12" r="2" />
+            </svg>
+            <span className="text-[9px] tracking-[0.15em] font-semibold">N</span>
           </div>
         </div>
-
       </div>
 
-      {/* Entrance — outside boundary so corners sit flush */}
-      <div className="flex items-center justify-center gap-2 mt-2.5 text-muted w-full max-w-xl">
+      {/* Greenhouse boundary — absolute-positioning canvas for zone tiles */}
+      <div className="relative w-full max-w-2xl aspect-square rounded-xl border-2 border-accent/40">
+
+        {/* Grid background — clipped separately so it respects border-radius */}
+        <div
+          className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none"
+          style={{
+            backgroundImage:
+              'linear-gradient(rgba(120,120,120,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(120,120,120,0.08) 1px, transparent 1px)',
+            backgroundSize: '36px 36px',
+          }}
+        />
+
+        {/* Corner marks */}
+        <svg className="absolute top-0 left-0 w-6 h-6 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="square">
+          <path d="M6 2H2v4" />
+        </svg>
+        <svg className="absolute top-0 right-0 w-6 h-6 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="square">
+          <path d="M18 2h4v4" />
+        </svg>
+        <svg className="absolute bottom-0 left-0 w-6 h-6 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="square">
+          <path d="M6 22H2v-4" />
+        </svg>
+        <svg className="absolute bottom-0 right-0 w-6 h-6 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="square">
+          <path d="M18 22h4v-4" />
+        </svg>
+
+        {/* Zone tiles */}
+        {zones.map((zone, i) => {
+          const layout = layouts[zone.zone_id] ?? defaultPosFor(i);
+          const Icon = ICON_MAP[detectCrop(zone.zone_name)] ?? PlantIcon;
+          const live = isLive(zone.last_seen_at);
+
+          return (
+            <Rnd
+              key={zone.zone_id}
+              position={{ x: layout.x, y: layout.y }}
+              size={{ width: layout.w, height: layout.h }}
+              minWidth={140}
+              minHeight={140}
+              bounds="parent"
+              dragGrid={[20, 20]}
+              resizeGrid={[20, 20]}
+              enableResizing={{
+                bottomRight: true, bottom: true, right: true,
+                top: false, left: false, topRight: false,
+                bottomLeft: false, topLeft: false,
+              }}
+              onDragStart={() => { draggingRef.current = true; }}
+              onDragStop={(_, d) => {
+                updateLayout(zone.zone_id, { x: d.x, y: d.y });
+                setTimeout(() => { draggingRef.current = false; }, 0);
+              }}
+              onResizeStop={(_, __, ref, ___, pos) => {
+                updateLayout(zone.zone_id, {
+                  w: parseInt(ref.style.width, 10),
+                  h: parseInt(ref.style.height, 10),
+                  x: pos.x, y: pos.y,
+                });
+              }}
+              className="rounded-lg border-2 border-dashed border-accent/40 bg-accent/[0.14] hover:bg-accent/[0.22] hover:border-accent/70 transition-colors"
+              style={{ cursor: 'grab' }}
+            >
+              <button
+                type="button"
+                onClick={() => { if (!draggingRef.current) onSelectZone(zone.zone_id); }}
+                className="relative flex flex-col items-center justify-center gap-2 p-3 w-full h-full rounded-lg text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent select-none"
+                style={{ cursor: 'inherit' }}
+              >
+                {/* Live dot */}
+                <span
+                  className={`absolute top-2 right-2 w-2 h-2 rounded-full ${live ? 'bg-accent' : 'bg-border'}`}
+                  title={live ? 'Live' : 'Offline'}
+                />
+
+                {/* Crop icon */}
+                <div className="w-14 h-14 rounded-xl bg-accent/10 flex items-center justify-center text-accent shrink-0">
+                  <Icon />
+                </div>
+
+                {/* Zone name */}
+                <p className="text-xs font-semibold text-ink leading-snug px-1 line-clamp-2 w-full">
+                  {zone.zone_name || zone.zone_id}
+                </p>
+
+                {/* Device ID */}
+                {zone.device_id && (
+                  <p className="text-[9px] text-muted truncate w-full leading-none" style={mono}>
+                    {zone.device_id}
+                  </p>
+                )}
+              </button>
+            </Rnd>
+          );
+        })}
+      </div>
+
+      {/* Entrance */}
+      <div className="flex items-center justify-center gap-2 mt-2.5 text-muted w-full max-w-2xl">
         <div className="h-px w-8 bg-accent/30" />
         <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
           <path d="M19 9l-7 7-7-7" />
@@ -312,5 +376,8 @@ ZoneLayers.propTypes = {
     device_id:    PropTypes.string,
     last_seen_at: PropTypes.string,
   })).isRequired,
-  onSelectZone: PropTypes.func.isRequired,
+  onSelectZone:  PropTypes.func.isRequired,
+  greenhouseId:  PropTypes.string,
 };
+
+ZoneLayers.defaultProps = { greenhouseId: '' };
