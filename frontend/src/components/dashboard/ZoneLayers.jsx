@@ -1,4 +1,5 @@
 import { Rnd } from 'react-rnd';
+import { motion } from 'motion/react';
 import { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 
@@ -182,6 +183,13 @@ function isLive(lastSeenAt) {
   return !!lastSeenAt && Date.now() - new Date(lastSeenAt).getTime() < LIVE_MS;
 }
 
+function gridCols(n) {
+  if (n <= 1) return 1;
+  if (n <= 4) return 2;
+  if (n <= 9) return 3;
+  return 4;
+}
+
 function defaultPosFor(index, cell = 180, gap = 16, perRow = 3) {
   const col = index % perRow;
   const row = Math.floor(index / perRow);
@@ -205,14 +213,92 @@ function saveLayouts(key, layouts) {
   try { localStorage.setItem(key, JSON.stringify(layouts)); } catch {}
 }
 
+/* ── Compass SVG ────────────────────────────────────────────────────────── */
+const Compass = () => (
+  <div className="flex flex-col items-center gap-0.5 text-muted" style={mono}>
+    <svg className="w-5 h-5 text-accent" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2l2 7h-4l2-7z" />
+      <path d="M12 22l-2-7h4l-2 7z" opacity="0.3" />
+      <path d="M2 12l7-2v4L2 12z" opacity="0.3" />
+      <path d="M22 12l-7 2v-4l7 2z" opacity="0.3" />
+      <circle cx="12" cy="12" r="2" />
+    </svg>
+    <span className="text-[9px] tracking-[0.15em] font-semibold">N</span>
+  </div>
+);
+
+/* ── Entrance label ─────────────────────────────────────────────────────── */
+const Entrance = ({ maxW }) => (
+  <div className={`flex items-center justify-center gap-2 mt-2.5 text-muted w-full ${maxW}`}>
+    <div className="h-px w-8 bg-accent/30" />
+    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 9l-7 7-7-7" />
+    </svg>
+    <span className="text-[9px] tracking-widest uppercase" style={mono}>Entrance</span>
+    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 9l-7 7-7-7" />
+    </svg>
+    <div className="h-px w-8 bg-accent/30" />
+  </div>
+);
+
+/* ── Zone tile shared content ───────────────────────────────────────────── */
+function ZoneTileContent({ zone }) {
+  const Icon = ICON_MAP[detectCrop(zone.zone_name)] ?? PlantIcon;
+  const live = isLive(zone.last_seen_at);
+  return (
+    <>
+      <span
+        className={`absolute top-2 right-2 w-2 h-2 rounded-full ${live ? 'bg-accent' : 'bg-border'}`}
+        title={live ? 'Live' : 'Offline'}
+      />
+      <div className="w-14 h-14 rounded-xl bg-accent/10 flex items-center justify-center text-accent shrink-0">
+        <Icon />
+      </div>
+      <p className="text-xs font-semibold text-ink leading-snug px-1 line-clamp-2 w-full">
+        {zone.zone_name || zone.zone_id}
+      </p>
+      {zone.device_id && (
+        <p className="text-[9px] text-muted truncate w-full leading-none" style={mono}>
+          {zone.device_id}
+        </p>
+      )}
+    </>
+  );
+}
+
+ZoneTileContent.propTypes = {
+  zone: PropTypes.shape({
+    zone_id:      PropTypes.string.isRequired,
+    zone_name:    PropTypes.string,
+    device_id:    PropTypes.string,
+    last_seen_at: PropTypes.string,
+  }).isRequired,
+};
+
+/* ── Main component ─────────────────────────────────────────────────────── */
 export default function ZoneLayers({ zones, onSelectZone, greenhouseId }) {
+  const MODE_KEY    = `gms-zone-layout-mode-${greenhouseId}`;
   const STORAGE_KEY = `gms-zone-layout-${greenhouseId}`;
+
+  const [layoutMode, setLayoutMode] = useState(() => {
+    try {
+      const v = localStorage.getItem(MODE_KEY);
+      return v === 'default' || v === 'custom' ? v : null;
+    } catch { return null; }
+  });
+
   const [layouts, setLayouts] = useState(() => loadLayouts(zones, STORAGE_KEY));
   const draggingRef = useRef(false);
 
   useEffect(() => { setLayouts(loadLayouts(zones, STORAGE_KEY)); }, [zones, STORAGE_KEY]);
 
   if (zones.length === 0) return null;
+
+  const chooseMode = (mode) => {
+    try { localStorage.setItem(MODE_KEY, mode); } catch {}
+    setLayoutMode(mode);
+  };
 
   const updateLayout = (id, patch) => {
     setLayouts(prev => {
@@ -227,39 +313,150 @@ export default function ZoneLayers({ zones, onSelectZone, greenhouseId }) {
     setLayouts(loadLayouts(zones, STORAGE_KEY));
   };
 
-  return (
-    <div className="flex flex-col items-center px-5 sm:px-7 pt-6 pb-8">
+  /* ── Layout picker (first visit) ──────────────────────────────────────── */
+  if (layoutMode === null) {
+    return (
+      <div className="flex flex-col items-center px-5 sm:px-7 pt-6 pb-8">
+        <div className="flex flex-col items-center gap-6 w-full max-w-2xl py-10">
+          <div className="text-center">
+            <h2 className="text-2xl text-ink leading-none" style={serif}>Greenhouse Layout</h2>
+            <p className="text-sm text-muted mt-2">How would you like to arrange your zones?</p>
+            <p className="text-xs text-muted mt-0.5">You can change this anytime from the layout controls.</p>
+          </div>
 
-      {/* Header + compass + reset */}
-      <div className="flex items-end justify-between mb-4 w-full max-w-2xl">
-        <div>
-          <h2 className="text-2xl text-ink leading-none" style={serif}>Greenhouse Layout</h2>
-          <p className="text-sm text-muted mt-1">Drag to reposition · drag bottom-right corner to resize · click to view readings.</p>
-        </div>
-        <div className="flex items-center gap-3 shrink-0 ml-4">
-          <button
-            onClick={resetLayout}
-            className="text-xs text-muted hover:text-ink transition-colors"
-          >
-            Reset layout
-          </button>
-          <div className="flex flex-col items-center gap-0.5 text-muted" style={mono}>
-            <svg className="w-5 h-5 text-accent" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2l2 7h-4l2-7z" />
-              <path d="M12 22l-2-7h4l-2 7z" opacity="0.3" />
-              <path d="M2 12l7-2v4L2 12z" opacity="0.3" />
-              <path d="M22 12l-7 2v-4l7 2z" opacity="0.3" />
-              <circle cx="12" cy="12" r="2" />
-            </svg>
-            <span className="text-[9px] tracking-[0.15em] font-semibold">N</span>
+          <div className="flex gap-4 w-full max-w-lg">
+            {/* Default grid option */}
+            <button
+              onClick={() => chooseMode('default')}
+              className="flex-1 flex flex-col items-center gap-3 p-6 rounded-xl border-2 border-accent/30 bg-accent/[0.07] hover:border-accent hover:bg-accent/[0.14] transition-colors text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              <div className="grid grid-cols-2 gap-1.5 w-14 h-14">
+                {[0, 1, 2, 3].map(n => (
+                  <div key={n} className="rounded-md bg-accent/40" />
+                ))}
+              </div>
+              <span className="text-sm font-semibold text-ink">Default Grid</span>
+              <span className="text-xs text-muted leading-snug">Auto-arranged, clean and simple</span>
+            </button>
+
+            {/* Custom layout option */}
+            <button
+              onClick={() => chooseMode('custom')}
+              className="flex-1 flex flex-col items-center gap-3 p-6 rounded-xl border-2 border-accent/30 bg-accent/[0.07] hover:border-accent hover:bg-accent/[0.14] transition-colors text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              <svg className="w-14 h-14 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <rect x="5" y="5" width="14" height="14" rx="1.5" strokeDasharray="3 2" />
+                <rect x="2.5" y="2.5" width="3.5" height="3.5" rx="0.75" fill="currentColor" stroke="none" />
+                <rect x="18" y="2.5" width="3.5" height="3.5" rx="0.75" fill="currentColor" stroke="none" />
+                <rect x="2.5" y="18" width="3.5" height="3.5" rx="0.75" fill="currentColor" stroke="none" />
+                <rect x="18" y="18" width="3.5" height="3.5" rx="0.75" fill="currentColor" stroke="none" />
+              </svg>
+              <span className="text-sm font-semibold text-ink">Custom Layout</span>
+              <span className="text-xs text-muted leading-snug">Drag &amp; resize to match your greenhouse</span>
+            </button>
           </div>
         </div>
       </div>
+    );
+  }
 
-      {/* Greenhouse boundary — absolute-positioning canvas for zone tiles */}
+  /* ── Shared header ────────────────────────────────────────────────────── */
+  const header = (
+    <div className="flex items-end justify-between mb-4 w-full max-w-2xl">
+      <div>
+        <h2 className="text-2xl text-ink leading-none" style={serif}>Greenhouse Layout</h2>
+        <p className="text-sm text-muted mt-1">
+          {layoutMode === 'default'
+            ? 'Click a zone to view its sensor readings.'
+            : 'Drag to reposition · drag bottom-right corner to resize · click to view readings.'}
+        </p>
+      </div>
+      <div className="flex items-center gap-2 shrink-0 ml-4">
+        <button
+          onClick={() => chooseMode(layoutMode === 'default' ? 'custom' : 'default')}
+          className="text-xs text-muted hover:text-ink border border-border rounded-full px-3 py-1 transition-colors whitespace-nowrap"
+        >
+          {layoutMode === 'default' ? 'Custom layout' : 'Default grid'}
+        </button>
+        {layoutMode === 'custom' && (
+          <button
+            onClick={resetLayout}
+            className="text-xs text-muted hover:text-ink transition-colors whitespace-nowrap"
+          >
+            Reset positions
+          </button>
+        )}
+        <Compass />
+      </div>
+    </div>
+  );
+
+  /* ── Default grid mode ────────────────────────────────────────────────── */
+  if (layoutMode === 'default') {
+    const cols = gridCols(zones.length);
+    return (
+      <div className="flex flex-col items-center px-5 sm:px-7 pt-6 pb-8">
+        {header}
+        <div className="relative rounded-xl border-2 border-accent/40 w-full max-w-2xl">
+
+          {/* Grid background */}
+          <div
+            className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none"
+            style={{
+              backgroundImage:
+                'linear-gradient(rgba(120,120,120,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(120,120,120,0.08) 1px, transparent 1px)',
+              backgroundSize: '36px 36px',
+            }}
+          />
+
+          {/* Corner marks */}
+          <svg className="absolute top-0 left-0 w-6 h-6 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="square">
+            <path d="M6 2H2v4" />
+          </svg>
+          <svg className="absolute top-0 right-0 w-6 h-6 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="square">
+            <path d="M18 2h4v4" />
+          </svg>
+          <svg className="absolute bottom-0 left-0 w-6 h-6 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="square">
+            <path d="M6 22H2v-4" />
+          </svg>
+          <svg className="absolute bottom-0 right-0 w-6 h-6 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="square">
+            <path d="M18 22h4v-4" />
+          </svg>
+
+          <div
+            className="relative grid gap-2 p-4"
+            style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+          >
+            {zones.map((zone, i) => (
+              <motion.button
+                key={zone.zone_id}
+                type="button"
+                onClick={() => onSelectZone(zone.zone_id)}
+                className="relative flex flex-col items-center justify-center gap-2 p-3 rounded-xl border-2 border-dashed border-accent/40 bg-accent/[0.14] hover:bg-accent/[0.22] hover:border-accent/70 cursor-pointer text-center aspect-square focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent transition-colors"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                transition={{ duration: 0.15, ease: 'easeOut' }}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1, transition: { delay: i * 0.06, duration: 0.2 } }}
+              >
+                <ZoneTileContent zone={zone} />
+              </motion.button>
+            ))}
+          </div>
+        </div>
+        <Entrance maxW="max-w-2xl" />
+      </div>
+    );
+  }
+
+  /* ── Custom (Rnd canvas) mode ─────────────────────────────────────────── */
+  return (
+    <div className="flex flex-col items-center px-5 sm:px-7 pt-6 pb-8">
+      {header}
+
       <div className="relative w-full max-w-2xl aspect-square rounded-xl border-2 border-accent/40">
 
-        {/* Grid background — clipped separately so it respects border-radius */}
+        {/* Grid background */}
         <div
           className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none"
           style={{
@@ -286,9 +483,6 @@ export default function ZoneLayers({ zones, onSelectZone, greenhouseId }) {
         {/* Zone tiles */}
         {zones.map((zone, i) => {
           const layout = layouts[zone.zone_id] ?? defaultPosFor(i);
-          const Icon = ICON_MAP[detectCrop(zone.zone_name)] ?? PlantIcon;
-          const live = isLive(zone.last_seen_at);
-
           return (
             <Rnd
               key={zone.zone_id}
@@ -325,46 +519,14 @@ export default function ZoneLayers({ zones, onSelectZone, greenhouseId }) {
                 className="relative flex flex-col items-center justify-center gap-2 p-3 w-full h-full rounded-lg text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent select-none"
                 style={{ cursor: 'inherit' }}
               >
-                {/* Live dot */}
-                <span
-                  className={`absolute top-2 right-2 w-2 h-2 rounded-full ${live ? 'bg-accent' : 'bg-border'}`}
-                  title={live ? 'Live' : 'Offline'}
-                />
-
-                {/* Crop icon */}
-                <div className="w-14 h-14 rounded-xl bg-accent/10 flex items-center justify-center text-accent shrink-0">
-                  <Icon />
-                </div>
-
-                {/* Zone name */}
-                <p className="text-xs font-semibold text-ink leading-snug px-1 line-clamp-2 w-full">
-                  {zone.zone_name || zone.zone_id}
-                </p>
-
-                {/* Device ID */}
-                {zone.device_id && (
-                  <p className="text-[9px] text-muted truncate w-full leading-none" style={mono}>
-                    {zone.device_id}
-                  </p>
-                )}
+                <ZoneTileContent zone={zone} />
               </button>
             </Rnd>
           );
         })}
       </div>
 
-      {/* Entrance */}
-      <div className="flex items-center justify-center gap-2 mt-2.5 text-muted w-full max-w-2xl">
-        <div className="h-px w-8 bg-accent/30" />
-        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M19 9l-7 7-7-7" />
-        </svg>
-        <span className="text-[9px] tracking-widest uppercase" style={mono}>Entrance</span>
-        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M19 9l-7 7-7-7" />
-        </svg>
-        <div className="h-px w-8 bg-accent/30" />
-      </div>
+      <Entrance maxW="max-w-2xl" />
     </div>
   );
 }
